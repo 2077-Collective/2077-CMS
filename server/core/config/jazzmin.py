@@ -17,8 +17,7 @@ JAZZMIN_SETTINGS = {
     
     "topmenu_links": [
         {"name": "HOME",  "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "ARTICLES", "url": "/admin/research/article/"},  
-        {"name": "RESEARCH", "url": "https://research.2077.xyz", "new_window": True},      
+        {"name": "ARTICLES", "url": "/admin/research/article/"},        
         {"name": "ABOUT US", "url": "https://2077.xyz/about", "new_window": True},
         {"name": "OUR VALUES", "url": "https://2077.xyz/values", "new_window": True},
         {"name": "SUPPORT US", "url": "https://2077.xyz/support", "new_window": True},
