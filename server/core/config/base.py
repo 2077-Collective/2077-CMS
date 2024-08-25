@@ -19,7 +19,7 @@ from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-# print(BASE_DIR)
+print(BASE_DIR)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -55,7 +55,6 @@ THIRD_PARTY_APPS = [
     'ckeditor_uploader',
     'django_ckeditor_5',
     'django_celery_beat',
-    'tinymce',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -98,7 +97,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            #BASE_DIR / '../../client/build',
+            BASE_DIR / '../../client/build',
             BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
@@ -108,9 +107,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-
-                # Tinymce Api Context
-                'core.config.tinymce.tinymce_api_key',
             ],
         },
     },
@@ -188,10 +184,8 @@ SILENCED_SYSTEM_CHECKS = [
     "staticfiles.W004"
 ]
 
-# Tinymce API Config
-TINYMCE_API_KEY = os.getenv('TINYMCE_API_KEY')
-
 from .jazzmin import *
 from .ckeditor import *
 from .celery_config import *
 from .mail import *
+

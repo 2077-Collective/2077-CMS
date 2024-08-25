@@ -7,7 +7,6 @@ from .category import Category
 from .author import Author
 from django.utils import timezone
 from django.conf import settings
-from tinymce.models import HTMLField
 
 
 def get_default_thumb():
@@ -22,10 +21,8 @@ class Article(BaseModel):
     )
 
     title = models.TextField()
-    #content = CKEditor5Field('Text', null=True, blank=True, config_name='extends')
-    content = HTMLField(blank=True, null=True)
+    content = CKEditor5Field('Text', null=True, blank=True, config_name='extends')
     summary = models.TextField(blank=True)
-    acknowledgement = models.TextField(blank=True, null=True)
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(blank=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
@@ -38,19 +35,19 @@ class Article(BaseModel):
     post_objects = ArticleObjects()
 
     class Meta:
-        ordering = ('-scheduled_publish_time',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return self.title
 
     def save(self, *args, **kwargs):
-        """Override save method to handle slug and scheduled publishing."""
-        if not self.slug or self.title_update():
+        """Override the save method to generate a unique slug."""
+        if not self.slug:
             self.slug = self.generate_unique_slug()
         
+        """Override the save method to handle scheduled publishing."""
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
-        
         super().save(*args, **kwargs)
 
     def generate_unique_slug(self):
@@ -62,10 +59,3 @@ class Article(BaseModel):
             slug = f"{base_slug}-{num}"
             num += 1
         return slug
-
-    def title_update(self):
-        """Check if the title has changed."""
-        if self.pk:
-            original = Article.objects.get(pk=self.pk)
-            return original.title != self.title
-        return False

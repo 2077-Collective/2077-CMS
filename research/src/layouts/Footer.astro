@@ -107,112 +107,126 @@
         </div>
     </div>
 
-<div class="flex items-center justify-center text-white" id="subscribe">
-    <div class="text-center flex flex-col justify-center gap-4 w-max">
-        <div>
-            <h3 class="text-3xl font-semibold">Your Ethereum Edge</h3>
-            <p class="text-white">
-                Get first-hand research delivered by our team of experts.
-            </p>
-        </div>
-        <form
-            action="https://cms.2077.xyz/newsletter/subscribe/"
-            method="post"
-            id="subscribe-form"
-            class="flex justify-center"
-        >
-            <!-- CSRF token will be added dynamically -->
-            <input
-                type="email"
-                name="email"
-                placeholder="Enter your email"
-                required
-                class="outline-none rounded-l bg-white border border-black w-max-content p-2 text-sm w-full border-r-none text-black"
-            />
-            <button
-                type="submit"
-                class="rounded-r bg-[#91b208] px-4 py-2 font-bold min-w-[110px] min-h-[42px] text-white"
+    <div class="flex items-center justify-center text-white" id="subscribe">
+        <div class="text-center flex flex-col justify-center gap-4 w-max">
+            <div>
+                <h3 class="text-3xl font-semibold">Your Ethereum Edge</h3>
+                <p class="text-white">
+                    Get first-hand research delivered by our team of experts.
+                </p>
+            </div>
+            <form
+                action="https://cms.2077.xyz/newsletter/subscribe/"
+                method="post"
+                id="subscribe-form"
+                class="flex justify-center"
             >
-                Subscribe
-            </button>
-        </form>
-        <span id="response-message" class="text-sm"></span>
-    </div>
-       
+                <!-- CSRF token will be added dynamically -->
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
+                    class="outline-none rounded-l bg-white border border-black w-max-content p-2 text-sm w-full border-r-none text-black"
+                />
+                <button
+                    type="submit"
+                    class="rounded-r bg-[#91b208] px-4 py-2 font-bold min-w-[110px] min-h-[42px] text-white"
+                >
+                    Subscribe
+                </button>
+            </form>
+            <span id="response-message" class="text-sm"></span>
+        </div>
+        
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 // TODO: this should be moved to another comp. along with the email form
                 const form = document.getElementById('subscribe-form') as HTMLFormElement | null
 
-            if (form) {
-                // Fetch CSRF token
-                fetch('https://cms.2077.xyz/get-csrf-token/', {
-                    credentials: 'include', // Ensure cookies are sent with the request
-                })
-                .then((response) => response.json())
-                .then((data) => {
-                    const csrfToken = data.csrfToken;
+                if (form) {
+                    // Fetch CSRF token
+                    fetch('https://cms.2077.xyz/get-csrf-token/', {
+                        credentials: 'include', // Ensure cookies are sent with the request
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            const csrfToken = data.csrfToken
 
-                    // Add CSRF token as a hidden input in the form
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrfmiddlewaretoken';
-                    input.value = csrfToken;
-                    form.appendChild(input);
+                            // Add CSRF token as a hidden input in the form
+                            const input = document.createElement('input')
+                            input.type = 'hidden'
+                            input.name = 'csrfmiddlewaretoken'
+                            input.value = csrfToken
+                            form.appendChild(input)
 
-                    // Handle form submission
-                    form.addEventListener('submit', async (event) => {
-                        event.preventDefault();
+                            // Handle form submission
+                            form.addEventListener('submit', (event) => {
+                                event.preventDefault()
 
-                        const formData = new FormData(form);
+                                const formData = new FormData(form)
 
-                        try {
-                            const response = await fetch(form.action, {
-                                method: 'POST',
-                                body: formData,
-                                headers: {
-                                    'X-CSRFToken': csrfToken,
-                                },
-                                credentials: 'include', // Ensure cookies are sent with the request
-                            });
-
-                            const messageElement = document.getElementById('response-message');
-                            if (response.ok) {
-                                if (messageElement) {
-                                    messageElement.textContent = 'Subscription successful!';
-                                    messageElement.style.color = 'green';
-                                }
-                            } else {
-                                const data = await response.json();
-                                throw new Error(data.message || 'An error occurred');
-                            }
-                        } catch (error) {
-                            const messageElement = document.getElementById('response-message');
+                                fetch(form.action, {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: {
+                                        'X-CSRFToken': csrfToken,
+                                    },
+                                    credentials: 'include', // Ensure cookies are sent with the request
+                                })
+                                    .then((response) => {
+                                        if (response.ok) {
+                                            return response.json()
+                                        } else {
+                                            return response
+                                                .json()
+                                                .then((data) => {
+                                                    throw new Error(
+                                                        data.message ||
+                                                            'An error occurred',
+                                                    )
+                                                })
+                                        }
+                                    })
+                                    .then(() => {
+                                        const messageElement =
+                                            document.getElementById(
+                                                'response-message',
+                                            )
+                                        if (messageElement) {
+                                            messageElement.textContent =
+                                                'Subscription successful!'
+                                            messageElement.style.color = 'green'
+                                        }
+                                    })
+                                    .catch((error) => {
+                                        const messageElement =
+                                            document.getElementById(
+                                                'response-message',
+                                            )
+                                        if (messageElement) {
+                                            messageElement.textContent =
+                                                error.message ||
+                                                'An error occurred. Please try again.'
+                                            messageElement.style.color = 'red'
+                                        }
+                                    })
+                            })
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching CSRF token:', error)
+                            const messageElement =
+                                document.getElementById('response-message')
                             if (messageElement) {
                                 messageElement.textContent =
-                                    (error instanceof Error
-                                        ? error.message
-                                        : 'An error occurred. Please try again.');
-                                messageElement.style.color = 'red';
+                                    'An error occurred while fetching the CSRF token. Please try again.'
+                                messageElement.style.color = 'red'
                             }
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.error('Error fetching CSRF token:', error);
-                    const messageElement = document.getElementById('response-message');
-                    if (messageElement) {
-                        messageElement.textContent = 'An error occurred while fetching the CSRF token. Please try again.';
-                        messageElement.style.color = 'red';
-                    }
-                });
-            }
-        });
-    </script>
-</div>
-
-
-
+                        })
+                }
+            })
+        </script>
+    </div>
 
     <div class="grid mt-16 flex justify-center">
         <a href="/" class="logo">
