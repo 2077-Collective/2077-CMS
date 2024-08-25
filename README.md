@@ -70,6 +70,9 @@ Before running the application, ensure you have the following:
 
     SITE_URL='http://localhost:8000'
 
+    # Tinymce 
+    TINYMCE_API_KEY=<Add tinymce API key here>
+
     # Django smtp
     EMAIL_HOST = 'smtp.gmail.com' # Example using Gmail
     EMAIL_HOST_USER = 'enter your email'
