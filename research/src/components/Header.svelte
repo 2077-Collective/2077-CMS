@@ -2,27 +2,30 @@
     import MobileNav from './MobileNav.svelte'
     import Dropdown from './Dropdown.svelte'
     import ToggleTheme from './ToggleTheme.svelte'
+    import NavButton from './NavButton.svelte'
 </script>
 
 <header class="py-8 px-6 lg:px-32 max-w-screen-3xl m-auto w-full">
     <nav class="flex justify-between">
         <div>
-            <a href="/" class="">
-                <img
-                    src="/logo-black.webp"
-                    alt=""
-                    width="197"
-                    height="58"
-                    class="dark:hidden block"
-                />
-                <img
-                    src="/logo-white.webp"
-                    alt=""
-                    width="197"
-                    height="58"
-                    class="dark:block hidden"
-                />
-            </a>
+            <NavButton path="/">
+                <div slot="label">
+                    <img
+                        src="/logo-black.webp"
+                        alt=""
+                        width="197"
+                        height="58"
+                        class="dark:hidden block"
+                    />
+                    <img
+                        src="/logo-white.webp"
+                        alt=""
+                        width="197"
+                        height="58"
+                        class="dark:block hidden"
+                    />
+                </div>
+            </NavButton>
         </div>
 
         <div class="flex items-center gap-0 md:gap-2 lg:gap-4">
@@ -30,7 +33,6 @@
 
             <div class="font-bold hidden lg:flex items-center gap-x-8">
                 <Dropdown />
-
                 <a
                     href="https://2077.xyz/support"
                     target="_blank"
