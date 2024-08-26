@@ -1,18 +1,10 @@
-<script lang="ts">
-    import { loading } from '../stores/loader.store'
-</script>
-
-{#if $loading}
-    <div class="fixed top-0 left-0">
-        <div class="w-screen m-auto">
-            <div class="bg-[#cccccc] w-full h-[5px]">
-                <div
-                    class="progress-bar-value bg-black w-full h-full bg-black"
-                />
-            </div>
+<div class="fixed top-0 left-0">
+    <div class="w-screen m-auto">
+        <div class="bg-[#cccccc] w-full h-[5px]">
+            <div class="progress-bar-value bg-black w-full h-full bg-black" />
         </div>
     </div>
-{/if}
+</div>
 
 <style scoped>
     .progress-bar-value {

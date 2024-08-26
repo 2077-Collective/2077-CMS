@@ -1,7 +1,6 @@
 ---
 import ArticleBody from '../components/ArticleBody.svelte'
 import Layout from '../layouts/Layout.astro'
-import NavButton from '../components/NavButton.svelte'
 import {
     FacebookShareButton,
     TwitterShareButton,
@@ -73,9 +72,7 @@ const formattedDate = formatDate(created_at)
 >
     <main class="max-w-screen-3xl m-auto">
         <article class="pt-8 px-6 lg:px-32">
-            <NavButton client:only path="/">
-                <span slot="label">&larr; Back</span>
-            </NavButton>
+            <a href="/">&larr; Back </a>
             {
                 article ? (
                     <article>

@@ -25,13 +25,34 @@ const defaultOgImage = new URL(
     } else {
         document.documentElement.classList.remove('dark')
     }
+
+    window.addEventListener('popstate', () => {
+        console.log('popstate called')
+
+        document.getElementById('loading').classList.remove('hidden')
+    })
+
+    document.addEventListener('click', function(event) {
+        let targetElement = event.target;
+
+        // Traverse up the DOM tree to see if any ancestor is an <a> tag
+        while (targetElement && targetElement.tagName !== 'A') {
+            targetElement = targetElement.parentElement;
+        }
+
+        if (targetElement && targetElement.tagName === 'A') {
+            document.getElementById('loading').classList.remove('hidden')
+        }
+    });
 </script>
 
 <html lang="en" class="h-full">
-    <LoadingBar client:only />
     <BaseHead ogImage={ogImage || defaultOgImage} title={title} description={description} />
     <Header client:only />
     <body class="bg-white dark:bg-black dark:text-white min-h-screen">
+        <div id="loading" class="hidden">
+            <LoadingBar client:only />
+        </div>
         <slot />
     </body><Footer />
 </html>
