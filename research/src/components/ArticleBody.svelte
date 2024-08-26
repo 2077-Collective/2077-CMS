@@ -1,12 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte'
-    import { setLoading } from '../stores/loader.store'
 
     export let content: string
-
-    onMount(() => {
-        setLoading(false)
-    })
 </script>
 
 <div

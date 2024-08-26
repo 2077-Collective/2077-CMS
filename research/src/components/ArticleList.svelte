@@ -1,7 +1,6 @@
 <script lang="ts">
     import { type Article } from '../types/article'
     import { categories } from '../stores/filters.store'
-    import { setLoading } from '../stores/loader.store'
     import { onMount } from 'svelte'
 
     export let articles: Article[]
@@ -18,20 +17,13 @@
             )
         }
     }
-
-    onMount(() => {
-        setLoading(false)
-    })
 </script>
 
 <ul
     class="mb-32 grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-12 gap-y-10 xl:w-5/6"
 >
     {#each filteredArticles as article (article.id)}
-        <li
-            class="flex flex-col gap-y-1 group cursor-pointer"
-            on:click={() => setLoading(true)}
-        >
+        <li class="flex flex-col gap-y-1 group cursor-pointer">
             <a class="bg-transparent" href={`/${article.slug}`}>
                 <img
                     src={article.thumb}
