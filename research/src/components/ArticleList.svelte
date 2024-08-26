@@ -1,10 +1,11 @@
 <script lang="ts">
     import { type Article } from '../types/article'
     import { categories } from '../stores/filters.store'
+    import { setLoading } from '../stores/loader.store'
+    import { onMount } from 'svelte'
 
     export let articles: Article[]
     let filteredArticles: Article[]
-    let articleClicked: string | null = null
 
     $: {
         if ($categories.length === 0) {
@@ -17,6 +18,10 @@
             )
         }
     }
+
+    onMount(() => {
+        setLoading(false)
+    })
 </script>
 
 <ul
@@ -25,8 +30,7 @@
     {#each filteredArticles as article (article.id)}
         <li
             class="flex flex-col gap-y-1 group cursor-pointer"
-            class:animate-pulse={articleClicked === article.id}
-            on:click={() => (articleClicked = article.id)}
+            on:click={() => setLoading(true)}
         >
             <a class="bg-transparent" href={`/${article.slug}`}>
                 <img
