@@ -69,6 +69,7 @@ const formattedDate = formatDate(created_at)
 <Layout
     title={article?.data?.title ?? ''}
     description={article?.data?.summary ?? ''}
+    ogImage={article?.data?.thumb ? new URL(article?.data?.thumb ?? '') : undefined}
 >
     <main class="max-w-screen-3xl m-auto">
         <article class="pt-8 px-6 lg:px-32">
