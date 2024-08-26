@@ -25,21 +25,27 @@
 >
     <div class="font-bold pt-2 px-2 flex-col">
         <button
-            class="block px-4 py-4 cursor-pointer transition-all hover:underline"
-            class:font-medium={$category}
+            class="block px-4 py-4 transition-all"
             on:click={() => clearCategories()}
         >
-            <span class="font-sans">All</span>
+            <span
+                class="font-sans hover:underline"
+                class:font-medium={$category}
+                class:text-gray-200={$category}
+                class:dark:font-thin={$category}>All</span
+            >
         </button>
 
         {#each availableCategories as articleCategory}
             <button
-                class="block px-4 py-4 cursor-pointer transition-all hover:underline"
+                class="block px-4 py-4 transition-all"
                 on:click={() => setCategory(articleCategory)}
             >
                 <span
-                    class="font-sans"
+                    class="font-sans hover:underline"
+                    class:text-gray-200={$category !== articleCategory}
                     class:font-medium={$category !== articleCategory}
+                    class:dark:font-thin={$category !== articleCategory}
                 >
                     {articleCategory}
                 </span>
