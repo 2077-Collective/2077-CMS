@@ -18,6 +18,7 @@ interface ArticleData {
         username: string, 
         twitter_username: string | null
     }[]
+    acknowledgement: string
     content: string
     views: string
     summary: string
@@ -166,6 +167,9 @@ const formattedDate = formatDate(created_at)
                                 </div>
                             </div>
 
+                            <div class="my-4 [&>p>a]:text-green-900 [&>p>a]:font-semibold [&>p>a]:underline lg:w-3/5 m-auto"set:html={article.data?.acknowledgement as string}>
+                            </div>
+
                             <div class="flex justify-center py-8">
                                 <img
                                     src={`${article.data?.thumb}`}
@@ -205,4 +209,9 @@ pre, code {
     padding-inline: .4rem;
     border-radius: .4rem;
 }
+
+.acknowledgement {
+    text-align: center;
+}
 </style>
+
