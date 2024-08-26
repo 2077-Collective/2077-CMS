@@ -40,7 +40,7 @@
     </button>
 
     <div
-        class="group-hover:block rounded bg-black sidebar p-4 absolute hidden top-6"
+        class="group-hover:block rounded bg-black dark:bg-gray sidebar p-4 absolute hidden top-6"
     >
         <a
             href="https://eip2077.info"
