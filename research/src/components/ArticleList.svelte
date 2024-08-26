@@ -1,18 +1,17 @@
 <script lang="ts">
     import { type Article } from '../types/article'
-    import { categories } from '../stores/filters.store'
-    import { onMount } from 'svelte'
+    import { category } from '../stores/filters.store'
 
     export let articles: Article[]
     let filteredArticles: Article[]
 
     $: {
-        if ($categories.length === 0) {
+        if ($category === undefined) {
             filteredArticles = articles
         } else {
             filteredArticles = articles.filter((article) =>
-                article.categories.some((category) =>
-                    $categories.includes(category.name),
+                article.categories.some(
+                    (articleCategory) => $category === articleCategory.name,
                 ),
             )
         }
