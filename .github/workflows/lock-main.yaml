@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Check Source Branch
         run: |
-          if [ "${{ github.event.pull_request.head.ref }}" != "staging" ]; then
-          echo "PRs to main branch must come from staging branch only."
-          exit 1
-          fi"""""}}"]
+          if [ "${{ github.event.pull_request.head.ref  }}" != "staging"  ]; then
+            echo "PRs to main branch must come from staging branch only."
+            exit 1
+          fi
