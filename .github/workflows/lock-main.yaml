@@ -1,0 +1,18 @@
+name: Restrict Merge to Main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_source_branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Source Branch
+        run: |
+          if [ "${{ github.event.pull_request.head.ref  }}" != "staging"  ]; then
+            echo "PRs to main branch must come from staging branch only."
+            exit 1
+          fi
