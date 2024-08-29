@@ -7,7 +7,7 @@ class AuthorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Author
-        fields = ['id', 'username', 'bio', 'twitter_username']
+        fields = ['id', 'username', 'full_name', 'bio', 'twitter_username']
 
     def get_username(self, obj):
         return obj.user.username

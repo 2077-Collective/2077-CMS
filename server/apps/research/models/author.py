@@ -7,6 +7,7 @@ class Author(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(blank=True, null=True)
     twitter_username = models.CharField(max_length=100, blank=True, null=True)
+    full_name = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Authors'

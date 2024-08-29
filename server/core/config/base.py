@@ -52,9 +52,8 @@ LOCAL_APPS = [
 
 THIRD_PARTY_APPS = [
     'corsheaders',
-    'ckeditor_uploader',
-    'django_ckeditor_5',
     'django_celery_beat',
+    'tinymce',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -97,7 +96,6 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / '../../client/build',
             BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
@@ -107,6 +105,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                # Tinymce Api Context
+                'core.config.tinymce.tinymce_api_key',
             ],
         },
     },
@@ -162,7 +163,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_DIRS = [
-    '../client/build/static/',
     os.path.join(BASE_DIR, 'static'),
 ]
 
@@ -184,8 +184,9 @@ SILENCED_SYSTEM_CHECKS = [
     "staticfiles.W004"
 ]
 
+# Tinymce API Config
+TINYMCE_API_KEY = os.getenv('TINYMCE_API_KEY')
+
 from .jazzmin import *
-from .ckeditor import *
 from .celery_config import *
 from .mail import *
-

@@ -14,7 +14,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'slug', 'title', 'authors', 'thumb', 
-            'categories', 'summary', 'content', 
+            'categories', 'summary', 'acknowledgement', 'content', 
             'status', 'views', 'created_at', 'updated_at', 'scheduled_publish_time'
         ]
 
@@ -25,7 +25,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['title', 'categories', 'thumb', 'content', 'summary', 'status', 'authors', 'scheduled_publish_time']
+        fields = ['title', 'categories', 'thumb', 'content', 'summary', 'acknowledgement', 'status', 'authors', 'scheduled_publish_time']
 
     # TODO : Debug this method to add the logged-in user as the author when creating a new article
     def create(self, validated_data):
