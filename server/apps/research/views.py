@@ -15,7 +15,7 @@ def index(request):
 class ArticleViewSet(viewsets.ModelViewSet):
     """API endpoint for articles."""
     permission_classes = [ArticleUserWritePermission]
-    #serializer_class = ArticleSerializer
+    
     
     def get_serializer_class(self):
         """Return appropriate serializer class based on request method."""

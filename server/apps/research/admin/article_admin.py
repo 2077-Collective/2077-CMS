@@ -1,18 +1,15 @@
 from django.contrib import admin
 from django import forms
-from django_ckeditor_5.widgets import CKEditor5Widget
 from apps.research.models import Article, Author
+from tinymce.widgets import TinyMCE
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
     """Admin interface for the Article model."""
-    class Media:
-        # Reference the JavaScript file
-        js = ('ckeditor/js/custom_ckeditor_admin.js',)
     fieldsets = [
-        ('Article Details', {'fields': ['title', 'authors', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
+        ('Article Details', {'fields': ['title', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
     ]
-    list_display = ('title', 'display_authors', 'status', 'views', 'display_categories', 'created_at', 'scheduled_publish_time')
+    list_display = ('title', 'display_authors', 'status', 'views', 'display_categories', 'min_read', 'created_at', 'scheduled_publish_time')
     search_fields = ('title', 'authors__user__username', 'authors__twitter_username', 'content')
     list_per_page = 25
     list_filter = ('authors', 'status', 'categories', 'created_at')
@@ -20,10 +17,11 @@ class ArticleAdmin(admin.ModelAdmin):
     list_editable = ('status',)
     
     def get_form(self, request, obj=None, **kwargs):
-        """Return a form with CKEditor5Widget for the content field."""
+        """Return a form with TinyMCE Widget for the selected fields."""
         form = super().get_form(request, obj, **kwargs)
-        if 'content' in form.base_fields:
-            form.base_fields['content'].widget = CKEditor5Widget(attrs={"class": "django_ckeditor_5"}, config_name='extends')
+        for field_name in ['content', 'acknowledgement']:
+            if field_name in form.base_fields:
+                form.base_fields[field_name].widget = TinyMCE(attrs={'cols': 80, 'rows': 30, 'id': f"{field_name}_richtext_field", 'placeholder': f"Enter {field_name} here"})
         return form
     
     def display_authors(self, obj):
