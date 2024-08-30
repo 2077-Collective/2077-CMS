@@ -3,6 +3,17 @@ from ..models import Article, Author, Category
 from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
 
+class ArticleListSerializer(serializers.ModelSerializer):
+    categories = CategorySerializer(many=True)
+
+    class Meta:
+        model = Article
+        include = ['categories']
+        exclude = [
+            'content', 'authors', 'scheduled_publish_time', 'acknowledgement', 
+            'status', 'views', 'created_at', 'updated_at'
+        ]
+
 class ArticleSerializer(serializers.ModelSerializer):
     """Serializer for the Article model."""
     authors = AuthorSerializer(many=True, read_only=True)
