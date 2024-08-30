@@ -37,9 +37,9 @@ DATABASES = {
 
 CSP_DEFAULT_SRC = ("self",)
 
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("self",)
 
-CSP_SCRIPT_SRC = ("'self'", "blob:", "'unsafe-inline'")
+CSP_SCRIPT_SRC = ("self", "blob:")
 
 CSP_IMG_SRC = ("self", "http://cms.2077.xyz", "https://cms.2077.xyz", "http://74.119.195.253", "blob:")
 
@@ -65,3 +65,7 @@ SESSION_COOKIE_SECURE = True
 
 #PROXY_SETTING for Astro server
 PROXY_ASTERISK = True
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800 # 50 MB
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800 # 50 MB
