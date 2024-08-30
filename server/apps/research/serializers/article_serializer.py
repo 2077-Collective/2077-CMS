@@ -9,12 +9,14 @@ class ArticleSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True)
     slug = serializers.ReadOnlyField()    
     views = serializers.ReadOnlyField()
+    min_read = serializers.ReadOnlyField()
+    
 
     class Meta:
         model = Article
         fields = [
             'id', 'slug', 'title', 'authors', 'thumb', 
-            'categories', 'summary', 'acknowledgement', 'content', 
+            'categories', 'summary', 'acknowledgement', 'content', 'min_read',
             'status', 'views', 'created_at', 'updated_at', 'scheduled_publish_time'
         ]
 
