@@ -1,3 +1,3 @@
 from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
-from .article_serializer import ArticleSerializer, ArticleCreateUpdateSerializer
+from .article_serializer import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer
