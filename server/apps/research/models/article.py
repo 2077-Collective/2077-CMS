@@ -39,13 +39,13 @@ class Article(BaseModel):
     class Meta:
         ordering = ('-scheduled_publish_time',)
     
-    @property
-    def min_read(self):
-        # Compute reading time based on content length
+    def calculate_min_read(self):
         word_count = len(self.content.split())
         words_per_minute = 300  # Average reading speed (words per minute)
         minutes = max(1, round(word_count / words_per_minute))
         return minutes
+
+    min_read = property(calculate_min_read)
 
     def __str__(self):
         return self.title
