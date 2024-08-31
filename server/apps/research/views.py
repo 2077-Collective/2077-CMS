@@ -7,7 +7,7 @@ import uuid
 
 from .models import Article
 from .permissions import ArticleUserWritePermission
-from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer
+from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer
 
 def index(request):
     return render(request, 'index.html')
@@ -19,6 +19,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
     def get_serializer_class(self):
         """Return appropriate serializer class based on request method."""
+        if self.action == 'list':
+            return ArticleListSerializer
         if self.request.method in ['POST', 'PUT', 'PATCH']:
             return ArticleCreateUpdateSerializer
         return ArticleSerializer
