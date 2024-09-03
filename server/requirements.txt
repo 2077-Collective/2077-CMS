@@ -14,9 +14,11 @@ click-repl==0.3.0
 cron-descriptor==1.4.3
 cryptography==43.0.0
 Django==5.0.8
+django-admin-interface==0.28.8
 django-celery-beat==2.6.0
 django-ckeditor==6.7.1
 django-ckeditor-5==0.2.13
+django-colorfield==0.11.0
 django-cors-headers==4.4.0
 django-filter==24.2
 django-jazzmin==3.0.0
@@ -42,6 +44,7 @@ python-crontab==3.2.0
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 python-dotenv==1.0.1
+python-slugify==8.0.4
 PyYAML==6.0.1
 redis==5.0.8
 referencing==0.35.1
