@@ -4,18 +4,18 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 import uuid
+import logging
 
 from .models import Article
 from .permissions import ArticleUserWritePermission
 from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer
 
-def index(request):
-    return render(request, 'index.html')
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class ArticleViewSet(viewsets.ModelViewSet):
     """API endpoint for articles."""
     permission_classes = [ArticleUserWritePermission]
-    
     
     def get_serializer_class(self):
         """Return appropriate serializer class based on request method."""
@@ -43,7 +43,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
             else:                
                 instance = Article.objects.get(slug=identifier)
         except Article.DoesNotExist:
-            return Response({'Error': 'Article does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Article does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error retrieving article by identifier: {e}")
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         instance.views = F('views') + 1
         instance.save(update_fields=['views'])
@@ -51,14 +54,17 @@ class ArticleViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response({'success': True, 'data': serializer.data})
     
-    #Custom action to retrieve articles by category
+    # Custom action to retrieve articles by category
     @action(detail=False, methods=['get'], url_path=r'category/(?P<category>[-\w]+)')
     def retrieve_by_category(self, request, category=None):
-        """Retrieve article list by category"""
-        instances = Article.objects.filter(categories__name=category)
-        serializer = self.get_serializer(instances, many=True)
-        return Response({'success': True, 'data': serializer.data})
-
+        """Retrieve article list by category."""
+        try:
+            instances = Article.objects.filter(categories__name=category)
+            serializer = self.get_serializer(instances, many=True)
+            return Response({'success': True, 'data': serializer.data})
+        except Exception as e:
+            logger.error(f"Error retrieving articles by category: {e}")
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def is_valid_uuid(self, value):
         """Check if the value is a valid UUID."""

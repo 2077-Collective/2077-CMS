@@ -1,16 +1,15 @@
-from django.urls import path, include, re_path
-from rest_framework.routers import DefaultRouter
-from .views import ArticleViewSet, index
+from django.urls import path, re_path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponse
-import requests
+from django.views.generic.base import RedirectView
+from rest_framework.routers import DefaultRouter
+from .views import ArticleViewSet
 
 router = DefaultRouter()
 router.register(r'articles', ArticleViewSet, basename='article')
 
 urlpatterns = [
-    path('', index, name='index'),
+    path('', RedirectView.as_view(url='/admin/', permanent=False)),  # Redirect root to admin
     path('api/', include(router.urls)),
     
     # Custom URL for retrieving articles by slug or UUID
