@@ -36,15 +36,8 @@ class ArticleAdmin(admin.ModelAdmin):
         return ", ".join(category.name for category in obj.categories.all())
     display_categories.short_description = 'Categories'
 
-    def save_model(self, request, obj, form, change):
-        """Automatically add the logged-in user as the author when creating a new article."""
-        if not change:  # If creating a new article
-            author = Author.objects.filter(user=request.user).first()  
-            if author:
-                obj.save()  
-                obj.authors.add(author)  
-        else:
-            super().save_model(request, obj, form, change)  
+    def save_model(self, request, obj, form, change):        
+        super().save_model(request, obj, form, change)  
 
     def has_change_permission(self, request, obj=None):
         """Check if the user has permission to change the article."""
