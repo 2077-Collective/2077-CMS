@@ -17,8 +17,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
 class ArticleSerializer(serializers.ModelSerializer):
     """Serializer for the Article model."""
     authors = AuthorSerializer(many=True, read_only=True)
-    categories = CategorySerializer(many=True)
-    slug = serializers.ReadOnlyField()    
+    categories = CategorySerializer(many=True)       
     views = serializers.ReadOnlyField()
     min_read = serializers.ReadOnlyField()
     
@@ -38,38 +37,45 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['title', 'categories', 'thumb', 'content', 'summary', 'acknowledgement', 'status', 'authors', 'scheduled_publish_time']
-
-    # TODO : Debug this method to add the logged-in user as the author when creating a new article
-    def create(self, validated_data):
+        fields = ['title', 'slug', 'categories', 'thumb', 'content', 'summary', 'acknowledgement', 'status', 'authors', 'scheduled_publish_time']
+    
+    def create(self, validated_data: dict) -> Article:
+        """Create a new article instance."""
         request = self.context.get('request')
         authors = validated_data.pop('authors', [])
         categories = validated_data.pop('categories', [])
 
-        if not authors and request and hasattr(request, 'user'):
-            user_author = Author.objects.filter(user=request.user).first()
-            if user_author:
-                authors = [user_author]
+        try:
+            if not authors and request and hasattr(request, 'user'):
+                user_author = Author.objects.filter(user=request.user).first()
+                if user_author:
+                    authors = [user_author]
 
-        article = Article.objects.create(**validated_data)
+            article = Article(**validated_data)
+            article.save()
 
-        if authors:
-            article.authors.set(authors)
-        if categories:
-            article.categories.set(categories)
+            if authors:
+                article.authors.set(authors)
+            if categories:
+                article.categories.set(categories)
 
-        return article
+            return article
+        except Exception as e:            
+            raise serializers.ValidationError(f"Error creating article: {str(e)}")
 
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Article, validated_data: dict) -> Article:
+        """Update an existing article instance."""
         authors = validated_data.pop('authors', [])
         categories = validated_data.pop('categories', [])
-        
-        instance = super().update(instance, validated_data)
-        
-        if authors:
-            instance.authors.set(authors)
-        if categories:
-            instance.categories.set(categories)
-            
-        return instance
+        try:
+            instance = super().update(instance, validated_data)
+
+            if authors:
+                instance.authors.set(authors)
+            if categories:
+                instance.categories.set(categories)
+
+            return instance
+        except Exception as e:          
+            raise serializers.ValidationError(f"Error updating article: {str(e)}")

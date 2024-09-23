@@ -7,7 +7,6 @@ from .author import Author
 from django.utils import timezone
 from django.conf import settings
 from tinymce.models import HTMLField
-import math
 
 
 def get_default_thumb():
@@ -52,10 +51,10 @@ class Article(BaseModel):
 
     def save(self, *args, **kwargs):
         """Override the save method to generate a unique slug."""
+
         if not self.slug or self.title_update():
-            self.slug = self.generate_unique_slug()
-               
-        """Override the save method to handle scheduled publishing."""
+            self.slug = self.generate_unique_slug()               
+       
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
 
@@ -63,6 +62,7 @@ class Article(BaseModel):
 
     def generate_unique_slug(self):
         """Generate a unique slug for the article."""
+
         base_slug = slugify(self.title)
         slug = base_slug
         num = 1
@@ -73,7 +73,8 @@ class Article(BaseModel):
     
     def title_update(self):
         """Check if the title has changed."""
-        if self.pk:
-            original = Article.objects.get(pk=self.pk)
-            return original.title != self.title
+        if self.pk:  # Only check if the article exists
+            original = Article.objects.filter(pk=self.pk).only('title').first()
+            if original:
+                return original.title != self.title
         return False

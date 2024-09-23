@@ -17,13 +17,13 @@ class ArticleAdmin(admin.ModelAdmin):
     """Admin interface for the Article model."""
     form = ArticleForm
     fieldsets = [
-        ('Article Details', {'fields': ['title', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
+        ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
     ]
     list_display = ('title', 'display_authors', 'status', 'views', 'display_categories', 'min_read', 'created_at', 'scheduled_publish_time')
     search_fields = ('title', 'authors__user__username', 'authors__twitter_username', 'content')
     list_per_page = 25
     list_filter = ('authors', 'status', 'categories', 'created_at')
-    readonly_fields = ('views', 'slug')
+    readonly_fields = ('views',)
     list_editable = ('status',)
 
     def display_authors(self, obj):
