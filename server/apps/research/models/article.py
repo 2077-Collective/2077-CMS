@@ -25,7 +25,7 @@ class Article(BaseModel):
     summary = models.TextField(blank=True)
     acknowledgement = HTMLField(blank=True, null=True)
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
-    slug = models.SlugField(blank=True, db_index=True)
+    slug = models.SlugField(max_length=255, blank=True, db_index=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     thumb = models.ImageField(upload_to='images/', default=get_default_thumb, blank=True)
     views = models.PositiveBigIntegerField(default=0)
