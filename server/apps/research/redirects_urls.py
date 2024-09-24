@@ -6,4 +6,6 @@ urlpatterns = [
          RedirectView.as_view(url='/api/articles/block-stm_vs_sealevel/', permanent=True)),
     path('api/articles/eips-for-nerds-8-eip-7685/', 
          RedirectView.as_view(url='/api/articles/EIP-7685-General-Purpose-Execution-Requests/', permanent=True)),
+    path('api/articles/research/eips-for-nerds-8-eip-7685/', 
+         RedirectView.as_view(url='/api/articles/EIP-7685-General-Purpose-Execution-Requests/', permanent=True)),
 ]
