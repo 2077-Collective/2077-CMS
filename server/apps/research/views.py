@@ -32,7 +32,30 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retrieve articles that are ready to be published."""
         return Article.objects.filter(status='ready')
-
+    
+    def create(self, request, *args, **kwargs):
+        """Handle article creation."""
+        serializer = self.get_serializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)            
+            self.perform_create(serializer)            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Unexpected error during article creation: {e}")
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def update(self, request, *args, **kwargs):
+        """Handle article update."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Unexpected error during article update: {e}")
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     # Custom action to retrieve articles by slug or UUID
     @action(detail=False, methods=['get'], url_path=r'(?P<identifier>[-\w0-9a-fA-F]+)')
     def retrieve_by_identifier(self, request, identifier=None):
