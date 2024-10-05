@@ -33,8 +33,7 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
-DJANGO_APPS = [
-    #'jazzmin',
+DJANGO_APPS = [    
     'admin_interface',
     'colorfield',
     'django.contrib.admin',
@@ -55,8 +54,7 @@ LOCAL_APPS = [
 THIRD_PARTY_APPS = [
     'corsheaders',
     'django_celery_beat',
-    'tinymce',
-    'sortedm2m',
+    'tinymce',    
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -195,6 +193,5 @@ SILENCED_SYSTEM_CHECKS = ["security.W019"]
 # Tinymce API Config
 TINYMCE_API_KEY = os.getenv('TINYMCE_API_KEY')
 
-from .jazzmin import *
 from .celery_config import *
 from .mail import *
