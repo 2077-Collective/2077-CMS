@@ -29,7 +29,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(config('DJANGO_DEBUG', default=True))
 
-ALLOWED_HOSTS = ["cms.2077.xyz"]
+ALLOWED_HOSTS = ["cms.2077.xyz", "127.0.0.1"]
 
 # Application definition
 
@@ -56,6 +56,7 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'django_celery_beat',
     'tinymce',
+    'sortedm2m',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
