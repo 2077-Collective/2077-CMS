@@ -56,6 +56,7 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'django_celery_beat',
     'tinymce',
+    'sortedm2m',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
