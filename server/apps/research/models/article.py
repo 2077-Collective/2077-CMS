@@ -7,8 +7,6 @@ from .author import Author
 from django.utils import timezone
 from django.conf import settings
 from tinymce.models import HTMLField
-from sortedm2m.fields import SortedManyToManyField
-
 
 def get_default_thumb():
     return f"{settings.MEDIA_URL}images/2077-Collective.png"
@@ -25,7 +23,7 @@ class Article(BaseModel):
     content = HTMLField(blank=True, null=True)
     summary = models.TextField(blank=True)
     acknowledgement = HTMLField(blank=True, null=True)
-    authors = SortedManyToManyField(Author, blank=True, related_name='articles')
+    authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     thumb = models.ImageField(upload_to='images/', default=get_default_thumb, blank=True)
