@@ -11,6 +11,15 @@ from tinymce.models import HTMLField
 def get_default_thumb():
     return f"{settings.MEDIA_URL}images/2077-Collective.png"
 
+class ArticleAuthor(models.Model):
+    """Through model for Article and Author with order."""
+    article = models.ForeignKey('research.Article', on_delete=models.CASCADE)
+    author = models.ForeignKey('research.Author', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=0, editable=True, db_index=True)
+
+    class Meta:
+        ordering = ['order']
+
 class Article(BaseModel):
     """Model for articles."""
     
@@ -23,7 +32,7 @@ class Article(BaseModel):
     content = HTMLField(blank=True, null=True)
     summary = models.TextField(blank=True)
     acknowledgement = HTMLField(blank=True, null=True)
-    authors = models.ManyToManyField(Author, blank=True, related_name='articles')
+    authors = models.ManyToManyField(Author, blank=True, related_name='articles', through=ArticleAuthor)
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     thumb = models.ImageField(upload_to='images/', default=get_default_thumb, blank=True)
@@ -77,3 +86,4 @@ class Article(BaseModel):
             if original:
                 return original.title != self.title
         return False
+

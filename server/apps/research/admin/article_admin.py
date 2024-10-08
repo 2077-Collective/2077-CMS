@@ -1,7 +1,13 @@
 from django.contrib import admin
 from django import forms
-from apps.research.models import Article, Author
+from apps.research.models import Article, Author, ArticleAuthor
 from tinymce.widgets import TinyMCE
+from adminsortable2.admin import SortableAdminMixin, SortableInlineAdminMixin
+
+class ArticleAuthorInline(SortableInlineAdminMixin, admin.TabularInline):
+    """Admin interface for the ArticleAuthor model."""
+    model = ArticleAuthor
+    extra = 1
 
 class ArticleForm(forms.ModelForm):
     class Meta:
@@ -12,19 +18,21 @@ class ArticleForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['acknowledgement'].widget = TinyMCE(attrs={'cols': 80, 'rows': 30, 'id': "acknowledgement_richtext_field", 'placeholder': f"Enter Acknowledgement here"})
         self.fields['content'].widget = TinyMCE(attrs={'cols': 80, 'rows': 30, 'id': "content_richtext_field", 'placeholder': f"Enter Article Content here"})
+        
 
-class ArticleAdmin(admin.ModelAdmin):
+class ArticleAdmin(SortableAdminMixin, admin.ModelAdmin):
     """Admin interface for the Article model."""
     form = ArticleForm
     fieldsets = [
-        ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
+        ('Article Details', {'fields': ['title', 'slug', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
     ]
     list_display = ('title', 'display_authors', 'status', 'views', 'display_categories', 'min_read', 'created_at', 'scheduled_publish_time')
     search_fields = ('title', 'authors__user__username', 'authors__twitter_username', 'content')
     list_per_page = 25
-    list_filter = ('authors', 'status', 'categories', 'created_at')
+    list_filter = ('status', 'categories', 'created_at')
     readonly_fields = ('views',)
     list_editable = ('status',)
+    inlines = [ArticleAuthorInline]
 
     def display_authors(self, obj):
         """Return a comma-separated list of authors for the article."""
