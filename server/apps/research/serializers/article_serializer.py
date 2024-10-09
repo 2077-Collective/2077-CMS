@@ -5,12 +5,13 @@ from .category_serializer import CategorySerializer
 
 class ArticleListSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True)
+    authors = AuthorSerializer(many=True)
 
     class Meta:
         model = Article
-        include = ['categories']
+        include = ['categories' 'authors']
         exclude = [
-            'content', 'authors', 'scheduled_publish_time', 'acknowledgement', 
+            'content', 'scheduled_publish_time', 'acknowledgement', 
             'status', 'views', 'created_at', 'updated_at'
         ]
 
