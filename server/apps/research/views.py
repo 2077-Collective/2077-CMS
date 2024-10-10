@@ -78,18 +78,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return Response({'success': True, 'data': serializer.data})
     
     # Custom action to retrieve articles by category
-    @action(detail=False, methods=['get'], url_path=r'category/(?P<category_slug>[-\w]+)')
-    def retrieve_by_category(self, request, category_slug=None):
-        """Retrieve article list by category slug."""
+    @action(detail=False, methods=['get'], url_path=r'category/(?P<category>[-\w]+)')
+    def retrieve_by_category(self, request, category=None):
+        """Retrieve article list by category."""
         try:
-            instances = Article.objects.filter(categories__slug=category_slug)
-            if not instances.exists():
-                return Response({'error': 'No articles found for this category'}, status=status.HTTP_404_NOT_FOUND)
-            
+            instances = Article.objects.filter(categories__name=category)
             serializer = self.get_serializer(instances, many=True)
             return Response({'success': True, 'data': serializer.data})
         except Exception as e:
-            logger.error(f"Error retrieving articles by category slug: {e}")
+            logger.error(f"Error retrieving articles by category: {e}")
             return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def is_valid_uuid(self, value):
