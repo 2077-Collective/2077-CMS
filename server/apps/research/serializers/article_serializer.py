@@ -26,9 +26,9 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = [
-            'id', 'slug', 'title', 'authors', 'thumb', 
-            'categories', 'summary', 'acknowledgement', 'content', 'min_read',
-            'status', 'views', 'created_at', 'updated_at', 'scheduled_publish_time'
+            'id', 'slug', 'title', 'authors', 'thumb', 'categories', 'summary',
+            'acknowledgement', 'content', 'min_read', 'status', 'views',
+            'created_at', 'updated_at', 'scheduled_publish_time', 'table_of_contents'
         ]
 
 class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
