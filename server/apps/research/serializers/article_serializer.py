@@ -12,7 +12,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
         include = ['categories' 'authors']
         exclude = [
             'content', 'scheduled_publish_time', 'acknowledgement', 
-            'status', 'views', 'created_at', 'updated_at'
+            'status', 'views', 'created_at', 'updated_at', 'table_of_contents'
         ]
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -22,13 +22,12 @@ class ArticleSerializer(serializers.ModelSerializer):
     views = serializers.ReadOnlyField()
     min_read = serializers.ReadOnlyField()
     
-
     class Meta:
         model = Article
         fields = [
-            'id', 'slug', 'title', 'authors', 'thumb', 
-            'categories', 'summary', 'acknowledgement', 'content', 'min_read',
-            'status', 'views', 'created_at', 'updated_at', 'scheduled_publish_time'
+            'id', 'slug', 'title', 'authors', 'thumb', 'categories', 'summary',
+            'acknowledgement', 'content', 'min_read', 'status', 'views',
+            'created_at', 'updated_at', 'scheduled_publish_time', 'table_of_contents'
         ]
 
 class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
