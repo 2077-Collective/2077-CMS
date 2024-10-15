@@ -12,7 +12,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
         include = ['categories' 'authors']
         exclude = [
             'content', 'scheduled_publish_time', 'acknowledgement', 
-            'status', 'views', 'created_at', 'updated_at'
+            'status', 'views', 'created_at', 'updated_at', 'table_of_contents'
         ]
 
 class ArticleSerializer(serializers.ModelSerializer):
