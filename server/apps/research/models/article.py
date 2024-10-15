@@ -68,7 +68,8 @@ class Article(BaseModel):
             while level <= stack[-1]['level']:
                 stack.pop()
 
-            new_item = {'title': title, 'id': id, 'children': []}
+            new_item = {'title': title, 'id': header['id'], 'children': []}
+            
             stack[-1]['children'].append(new_item)
             stack.append({'level': level, 'children': new_item['children']})
 

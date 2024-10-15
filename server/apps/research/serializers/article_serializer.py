@@ -22,7 +22,6 @@ class ArticleSerializer(serializers.ModelSerializer):
     views = serializers.ReadOnlyField()
     min_read = serializers.ReadOnlyField()
     
-
     class Meta:
         model = Article
         fields = [
