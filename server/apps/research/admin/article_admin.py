@@ -18,11 +18,12 @@ class ArticleAdmin(admin.ModelAdmin):
     form = ArticleForm
     fieldsets = [
         ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
+        ('Sponsorship Details', {'fields': ['is_sponsored', 'sponsor_color', 'sponsor_text_color', 'sponsor_padding']}),
     ]
     list_display = ('title', 'display_authors', 'status', 'views', 'display_categories', 'min_read', 'created_at', 'scheduled_publish_time')
     search_fields = ('title', 'authors__user__username', 'authors__twitter_username', 'content')
     list_per_page = 25
-    list_filter = ('authors', 'status', 'categories', 'created_at')
+    list_filter = ('authors', 'status', 'categories', 'created_at', 'is_sponsored')
     readonly_fields = ('views',)
     list_editable = ('status',)
 
