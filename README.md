@@ -2,7 +2,7 @@
 
 # 2077 Collective
 
-Content management system written in Python(Django) and React.js
+Content management system written in Python(Django) and Sveltekit
 
 ## Project Architecture
 
