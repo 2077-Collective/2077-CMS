@@ -34,6 +34,10 @@ class Article(BaseModel):
     status = models.CharField(max_length=10, choices=options, default='draft', db_index=True)    
     scheduled_publish_time = models.DateTimeField(null=True, blank=True, db_index=True)    
     table_of_contents = models.JSONField(default=list, blank=True)
+    is_sponsored = models.BooleanField(default=False)
+    sponsor_color = models.CharField(max_length=7, default="#FF0420")
+    sponsor_text_color = models.CharField(max_length=7, default="#000000")
+    sponsor_padding = models.CharField(max_length=20, default="px-4 py-6")
 
     objects = models.Manager()
     post_objects = ArticleObjects()
