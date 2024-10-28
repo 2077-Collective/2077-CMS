@@ -18,7 +18,7 @@ class ArticleAdmin(admin.ModelAdmin):
     form = ArticleForm
     fieldsets = [
         ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
-        ('Sponsorship Details', {'fields': ['is_sponsored', 'sponsor_color', 'sponsor_text_color', 'sponsor_padding']}),
+        ('Sponsorship Details', {'fields': ['is_sponsored', 'sponsor_color', 'sponsor_text_color']}),
     ]
     list_display = ('title', 'display_authors', 'status', 'views', 'display_categories', 'min_read', 'created_at', 'scheduled_publish_time')
     search_fields = ('title', 'authors__user__username', 'authors__twitter_username', 'content')
