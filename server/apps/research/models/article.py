@@ -37,7 +37,6 @@ class Article(BaseModel):
     is_sponsored = models.BooleanField(default=False)
     sponsor_color = models.CharField(max_length=7, default="#FF0420")
     sponsor_text_color = models.CharField(max_length=7, default="#000000")
-    sponsor_padding = models.CharField(max_length=20, default="px-4 py-6")
 
     objects = models.Manager()
     post_objects = ArticleObjects()
