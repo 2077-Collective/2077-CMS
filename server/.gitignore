@@ -1,5 +1,7 @@
 .venv/
 .env
+.env.staging
+.env.production
 __pycache__/
 dumps/
 .DS_Store
