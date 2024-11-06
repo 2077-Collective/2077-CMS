@@ -20,3 +20,4 @@ client/
 containerization.md
 .env.staging
 .env.prod
+django-cicd.txt
