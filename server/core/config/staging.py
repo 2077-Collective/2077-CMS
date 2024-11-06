@@ -1,10 +1,10 @@
 from .base import *
 
-MEDIA_URL = 'https://cms.2077.xyz/media/'
+MEDIA_URL = 'https://stagecms.2077.xyz/media/'
 
 DEBUG = bool(config('DJANGO_DEBUG', default=True))
 
-ALLOWED_HOSTS = ['74.119.195.253', 'cms.2077.xyz']
+ALLOWED_HOSTS = ['74.119.195.253', 'stagecms.2077.xyz']
 
 CSRF_TRUSTED_ORIGINS = []
 for host in ALLOWED_HOSTS:
@@ -12,8 +12,8 @@ for host in ALLOWED_HOSTS:
     CSRF_TRUSTED_ORIGINS.append(f"http://{host}")
 
 CORS_ALLOWED_ORIGINS = [
-    "https://cms.2077.xyz", # Https version of Django
-    "http://74.119.195.253", # Http version of Astro
+    "https://stagecms.2077.xyz", # Https version of Django
+    "http://74.119.195.253:8001", # Http version of Django
     "http://127.0.0.1:4321", # Local Dev
     "http://localhost:4321", # Local Dev
     ]
@@ -41,7 +41,7 @@ CSP_STYLE_SRC = ("self",)
 
 CSP_SCRIPT_SRC = ("self", "blob:")
 
-CSP_IMG_SRC = ("self", "http://cms.2077.xyz", "https://cms.2077.xyz", "http://74.119.195.253", "blob:")
+CSP_IMG_SRC = ("self", "http://stagecms.2077.xyz", "https://stagecms.2077.xyz", "http://74.119.195.253:8001", "blob:")
 
 CSP_MEDIA_SRC = ("'self'", "blob:")
 
