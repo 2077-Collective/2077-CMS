@@ -1,6 +1,7 @@
 from .base import *
 
-MEDIA_URL = 'https://stagecms.2077.xyz/media/'
+#MEDIA_URL = 'https://stagecms.2077.xyz/media/'
+MEDIA_URL = 'http://74.119.195.253/media/'
 
 DEBUG = bool(config('DJANGO_DEBUG', default=True))
 
