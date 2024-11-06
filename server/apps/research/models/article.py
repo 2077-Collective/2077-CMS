@@ -7,6 +7,9 @@ from .author import Author
 from django.utils import timezone
 from django.conf import settings
 from tinymce.models import HTMLField
+import json
+from bs4 import BeautifulSoup
+import uuid
 
 def get_default_thumb():
     return f"{settings.MEDIA_URL}images/2077-Collective.png"
@@ -30,7 +33,11 @@ class Article(BaseModel):
     views = models.PositiveBigIntegerField(default=0)
     status = models.CharField(max_length=10, choices=options, default='draft', db_index=True)    
     scheduled_publish_time = models.DateTimeField(null=True, blank=True, db_index=True)    
-    
+    table_of_contents = models.JSONField(default=list, blank=True)
+    is_sponsored = models.BooleanField(default=False)
+    sponsor_color = models.CharField(max_length=7, default="#FF0420")
+    sponsor_text_color = models.CharField(max_length=7, default="#000000")
+
     objects = models.Manager()
     post_objects = ArticleObjects()
 
@@ -48,12 +55,38 @@ class Article(BaseModel):
     def __str__(self):
         return self.title
 
-    def save(self, *args, **kwargs):
-        """Override the save method to generate a unique slug."""
+    def build_table_of_contents(self):
+        """Build the table of contents from the article content."""
+        soup = BeautifulSoup(self.content, 'html.parser')
+        headers = soup.find_all(['h1', 'h2', 'h3'])
+        
+        toc = []
+        stack = [{'level': 0, 'children': toc}]
 
+        for header in headers:
+            level = int(header.name[1])
+            title = header.get_text()
+            header['id'] = slugify(title)
+
+            while level <= stack[-1]['level']:
+                stack.pop()
+
+            new_item = {'title': title, 'id': header['id'], 'children': []}
+            
+            stack[-1]['children'].append(new_item)
+            stack.append({'level': level, 'children': new_item['children']})
+
+        self.table_of_contents = toc
+        self.content = str(soup)
+
+    def save(self, *args, **kwargs):
+        """Override the save method to generate a unique slug and build table of contents."""
         if not self.slug or self.title_update():
-            self.slug = self.generate_unique_slug()               
-       
+            self.slug = self.generate_unique_slug()
+        
+        if self.content:
+            self.build_table_of_contents()
+        
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
 
