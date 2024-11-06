@@ -17,3 +17,7 @@ db.sqlite3
 old-backup-db.sqlite3
 dump.rdp
 client/
+containerization.md
+.env.staging
+.env.prod
+django-cicd.txt
