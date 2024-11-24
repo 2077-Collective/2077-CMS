@@ -80,6 +80,29 @@ class Article(BaseModel):
         self.content = str(soup)
 
     def save(self, *args, **kwargs):
+
+        """Override the save method to track slug changes."""
+        if self.pk:  # If this is an existing article
+            try:
+                old_instance = Article.objects.get(pk=self.pk)
+                # Generate new slug first
+                if not self.slug or self.title_update():
+                    self.slug = self.generate_unique_slug()
+                
+                # Then check if we need to create slug history
+                if old_instance.slug and old_instance.slug != self.slug:
+                    # Only create history if the slug actually changed and isn't empty
+                    ArticleSlugHistory.objects.create(
+                        article=self,
+                        old_slug=old_instance.slug
+                    )
+            except Article.DoesNotExist:
+                pass
+        else:
+            # New article being created
+            if not self.slug:
+                self.slug = self.generate_unique_slug()
+
         """Override the save method to generate a unique slug and build table of contents."""
         if not self.slug or self.title_update():
             self.slug = self.generate_unique_slug()
@@ -110,3 +133,20 @@ class Article(BaseModel):
             if original:
                 return original.title != self.title
         return False
+
+class ArticleSlugHistory(models.Model):
+    """Model to track historical slugs for articles."""
+    id = models.AutoField(primary_key=True)
+    article = models.ForeignKey('Article', on_delete=models.CASCADE, related_name='slug_history')
+    old_slug = models.SlugField(max_length=255, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('article', 'old_slug')
+        indexes = [
+            models.Index(fields=['old_slug']),
+        ]
+        db_table = 'research_articleslughistory'  # explicitly set table name
+
+    def __str__(self):
+        return f"{self.old_slug} -> {self.article.slug}"
