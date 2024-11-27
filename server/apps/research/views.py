@@ -90,7 +90,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Error retrieving article by identifier: {e}")
             return Response({'error': 'Article does not exist'}, 
-                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                          status=status.HTTP_404_NOT_FOUND)
     
     # Custom action to retrieve articles by category
     @action(detail=False, methods=['get'], url_path=r'category/(?P<category>[-\w]+)')
