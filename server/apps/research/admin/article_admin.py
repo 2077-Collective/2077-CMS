@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django import forms
-from apps.research.models import Article, Author, ArticleSlugHistory
+from apps.research.models import Article, ArticleSlugHistory
 from tinymce.widgets import TinyMCE
-from django.utils.html import format_html
+from .slug_history import current_slug_history
 
 
     
@@ -20,28 +20,7 @@ class ArticleAdmin(admin.ModelAdmin):
     """Admin interface for the Article model."""
     form = ArticleForm
     def current_slug_history(self, obj):
-        """Display the history of URL changes for the article."""
-        histories = obj.slug_history.all().order_by('-created_at')
-        if not histories:
-            return "No slug changes recorded"
-        
-        html = ['<div class="slug-history">']
-        html.append('<table style="width: 100%; border-collapse: collapse;">')
-        html.append('<tr style="background-color: #f5f5f5;">')
-        html.append('<th style="padding: 8px; border: 1px solid #ddd;">Old Slug</th>')
-        html.append('<th style="padding: 8px; border: 1px solid #ddd;">Changed At</th>')
-        html.append('</tr>')
-        
-        for history in histories:
-            html.append('<tr>')
-            html.append(f'<td style="padding: 8px; border: 1px solid #ddd;">{history.old_slug}</td>')
-            html.append(f'<td style="padding: 8px; border: 1px solid #ddd;">{history.created_at}</td>')
-            html.append('</tr>')
-        
-        html.append('</table>')
-        html.append('</div>')
-        
-        return format_html(''.join(html))
+        return current_slug_history(obj)
     current_slug_history.short_description = 'Slug Change History'
     
     fieldsets = [

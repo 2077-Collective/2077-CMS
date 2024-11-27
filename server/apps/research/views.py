@@ -42,7 +42,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Unexpected error during article creation: {e}")
-            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Failed to create a new Article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def update(self, request, *args, **kwargs):
         """Handle article update."""
@@ -54,7 +54,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Unexpected error during article update: {e}")
-            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Error updating article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     # Custom action to retrieve articles by slug or UUID
     @action(detail=False, methods=['get'], url_path=r'(?P<identifier>[-\w0-9a-fA-F]+)')
@@ -89,7 +89,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             
         except Exception as e:
             logger.error(f"Error retrieving article by identifier: {e}")
-            return Response({'error': 'An unexpected error occurred'}, 
+            return Response({'error': 'Article does not exist'}, 
                           status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     # Custom action to retrieve articles by category
@@ -102,7 +102,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'success': True, 'data': serializer.data})
         except Exception as e:
             logger.error(f"Error retrieving articles by category: {e}")
-            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Category does not exist'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def is_valid_uuid(self, value):
         """Check if the value is a valid UUID."""
