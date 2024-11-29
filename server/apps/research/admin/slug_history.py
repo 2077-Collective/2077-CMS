@@ -1,20 +1,24 @@
-from django.utils.html import format_html
+from django.utils.html import format_html, escape
+from django.utils.safestring import mark_safe
 
 def get_slug_history_table(histories):
     """Return the HTML table for the slug history."""
     html = []
-    html.append('<table style="width: 100%; border-collapse: collapse;">')
-    html.append('<tr style="background-color: #f5f5f5;">')
-    html.append('<th style="padding: 8px; border: 1px solid #ddd;">Old Slug</th>')
-    html.append('<th style="padding: 8px; border: 1px solid #ddd;">Changed At</th>')
+    html.append('<table class="slug-history-table" role="grid">')
+    html.append('<caption class="sr-only">Slug History Table</caption>')
+    html.append('<thead><tr>') 
+    html.append('<th scope="col">Old Slug</th>')
+    html.append('<th scope="col">Changed At</th>')
     html.append('</tr>')
+    html.append('</thead><tbody>')
     for history in histories:
         html.append('<tr>')
-        html.append(f'<td style="padding: 8px; border: 1px solid #ddd;">{history.old_slug}</td>')
-        html.append(f'<td style="padding: 8px; border: 1px solid #ddd;">{history.created_at}</td>')
+        html.append(f'<td>{escape(history.old_slug)}</td>')
+        html.append(f'<td>{history.created_at}</td>')
         html.append('</tr>')
+    html.append('</tbody>')
     html.append('</table>')
-    return ''.join(html)
+    return mark_safe(''.join(html))
 
 def get_slug_history_html(obj):
     """Return the HTML for the slug history."""
