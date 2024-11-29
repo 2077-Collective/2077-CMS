@@ -44,7 +44,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Unexpected error during article creation: {e}")
             if isinstance(e, serializers.ValidationError):
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Invalid data provided'}, status=status.HTTP_400_BAD_REQUEST)
             return Response({'error': 'Failed to create a new Article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def update(self, request, *args, **kwargs):
@@ -58,7 +58,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         except Exception as e:                 
             logger.error(f"Unexpected error during article update: {e}")
             if isinstance(e, serializers.ValidationError):
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)       
+                return Response({'error': 'Invalid data provided'}, status=status.HTTP_400_BAD_REQUEST)       
             return Response({'error': 'Error updating article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     # Custom action to retrieve articles by slug or UUID
