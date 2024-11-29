@@ -67,32 +67,32 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def retrieve_by_identifier(self, request, identifier=None):
         """Retrieve an article by slug or UUID,  handling old slugs."""
         try:
-            if self.is_valid_uuid(identifier):
-                instance = Article.objects.get(pk=identifier)
-            else:
-                try:
-                    instance = Article.objects.get(slug=identifier)
-                except Article.DoesNotExist:
-                    # Check if this is an old slug
-                    slug_history = get_object_or_404(ArticleSlugHistory, old_slug=identifier)
-                    instance = slug_history.article
-                    # Return a redirect response with the new URL
-                    new_url = request.build_absolute_uri().replace(
-                        f'/api/articles/{identifier}/',
-                        f'/api/articles/{instance.slug}/'
-                    )
-                    return Response({
-                        'type': 'redirect',
-                        'new_url': new_url,
-                        'data': self.get_serializer(instance).data
-                    }, status=status.HTTP_301_MOVED_PERMANENTLY)
-
             with transaction.atomic():
-                instance.views = F('views') + 1
-                instance.save(update_fields=['views'])
-                instance.refresh_from_db(fields=['views'])
-            serializer = self.get_serializer(instance)
-            return Response({'success': True, 'data': serializer.data})
+                if self.is_valid_uuid(identifier):
+                    instance = Article.objects.get(pk=identifier)
+                else:
+                    try:
+                        instance = Article.objects.get(slug=identifier)
+                    except Article.DoesNotExist:
+                        # Check if this is an old slug
+                        slug_history = get_object_or_404(ArticleSlugHistory, old_slug=identifier)
+                        instance = slug_history.article
+                        # Return a redirect response with the new URL
+                        new_url = request.build_absolute_uri().replace(
+                            f'/api/articles/{identifier}/',
+                            f'/api/articles/{instance.slug}/'
+                        )
+                        return Response({
+                            'type': 'redirect',
+                            'new_url': new_url,
+                            'data': self.get_serializer(instance).data
+                        }, status=status.HTTP_301_MOVED_PERMANENTLY)
+                    
+                    instance.views = F('views') + 1
+                    instance.save(update_fields=['views'])
+                    instance.refresh_from_db(fields=['views'])
+                serializer = self.get_serializer(instance)
+                return Response({'success': True, 'data': serializer.data})
             
         except Exception as e:
             logger.error(f"Error retrieving article by identifier: {e}")
