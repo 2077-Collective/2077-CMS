@@ -80,14 +80,17 @@ class Article(BaseModel):
         self.content = str(soup)
 
     def save(self, *args, **kwargs):
+        """
+        Override the save method to generate a unique slug, build table of contents,
+        track slug changes, and update article status based on scheduled publish time.
+        """
+        if not self.slug or self.title_update():
+            self.slug = self.generate_unique_slug()
 
         """Override the save method to track slug changes."""
         if self.pk:  # If this is an existing article
             try:
-                old_instance = Article.objects.get(pk=self.pk)
-                # Generate new slug first
-                if not self.slug or self.title_update():
-                    self.slug = self.generate_unique_slug()
+                old_instance = Article.objects.get(pk=self.pk)                
                 
                 # Then check if we need to create slug history
                 if old_instance.slug and old_instance.slug != self.slug:
@@ -97,15 +100,7 @@ class Article(BaseModel):
                         old_slug=old_instance.slug
                     )
             except Article.DoesNotExist:
-                pass
-        else:
-            # New article being created
-            if not self.slug:
-                self.slug = self.generate_unique_slug()
-
-        """Override the save method to generate a unique slug and build table of contents."""
-        if not self.slug or self.title_update():
-            self.slug = self.generate_unique_slug()
+                pass      
         
         if self.content:
             self.build_table_of_contents()
