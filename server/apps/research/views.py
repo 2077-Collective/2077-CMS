@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 import uuid
 import logging
+from django.db import transaction
 
 from .models import Article, ArticleSlugHistory
 from .permissions import ArticleUserWritePermission
@@ -81,9 +82,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
                         'data': self.get_serializer(instance).data
                     }, status=status.HTTP_301_MOVED_PERMANENTLY)
 
-            instance.views = F('views') + 1
-            instance.save(update_fields=['views'])
-            instance.refresh_from_db(fields=['views'])
+            with transaction.atomic():
+                instance.views = F('views') + 1
+                instance.save(update_fields=['views'])
+                instance.refresh_from_db(fields=['views'])
             serializer = self.get_serializer(instance)
             return Response({'success': True, 'data': serializer.data})
             
