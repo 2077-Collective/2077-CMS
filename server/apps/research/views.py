@@ -6,6 +6,7 @@ from rest_framework.response import Response
 import uuid
 import logging
 from django.db import transaction
+from rest_framework import serializers
 
 
 from .models import Article, ArticleSlugHistory
@@ -44,7 +45,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Unexpected error during article creation: {e}")
-            if isinstance(e, serializer.ValidationError):
+            if isinstance(e, serializers.ValidationError):
                 return Response({'error': 'Invalid data provided'}, status=status.HTTP_400_BAD_REQUEST)
             return Response({'error': 'Failed to create a new Article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -58,7 +59,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:                 
             logger.error(f"Unexpected error during article update: {e}")
-            if isinstance(e, serializer.ValidationError):
+            if isinstance(e, serializers.ValidationError):
                 return Response({'error': 'Invalid data provided'}, status=status.HTTP_400_BAD_REQUEST)       
             return Response({'error': 'Error updating article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -88,9 +89,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
                             'data': self.get_serializer(instance).data
                         }, status=status.HTTP_301_MOVED_PERMANENTLY)
                     
-                    instance.views = F('views') + 1
-                    instance.save(update_fields=['views'])
-                    instance.refresh_from_db(fields=['views'])
+                instance.views = F('views') + 1
+                instance.save(update_fields=['views'])
+                instance.refresh_from_db(fields=['views'])
                 serializer = self.get_serializer(instance)
                 return Response({'success': True, 'data': serializer.data})
             
