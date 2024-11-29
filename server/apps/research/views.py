@@ -6,6 +6,8 @@ from rest_framework.response import Response
 import uuid
 import logging
 from django.db import transaction
+from rest_framework import serializers
+
 
 from .models import Article, ArticleSlugHistory
 from .permissions import ArticleUserWritePermission
@@ -108,7 +110,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'success': True, 'data': serializer.data})
         except Exception as e:
             logger.error(f"Error retrieving articles by category: {e}")
-            return Response({'error': 'Category does not exist'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Category does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
     def is_valid_uuid(self, value):
         """Check if the value is a valid UUID."""
