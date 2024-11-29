@@ -14,6 +14,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+# third party imports
+from .celery_config import *
+from .mail import *
+
 load_dotenv()
 from decouple import config
 
@@ -154,6 +158,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
+
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -192,6 +197,3 @@ SILENCED_SYSTEM_CHECKS = ["security.W019"]
 
 # Tinymce API Config
 TINYMCE_API_KEY = os.getenv('TINYMCE_API_KEY')
-
-from .celery_config import *
-from .mail import *
