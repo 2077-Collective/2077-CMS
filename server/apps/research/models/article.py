@@ -26,7 +26,7 @@ class Article(BaseModel):
     content = HTMLField(blank=True, null=True)
     summary = models.TextField(blank=True)
     acknowledgement = HTMLField(blank=True, null=True)
-    authors = models.ManyToManyField(Author, blank=True, related_name='articles')
+    authors = models.ManyToManyField(Author, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     thumb = models.ImageField(upload_to='images/', default=get_default_thumb, blank=True)
@@ -80,17 +80,17 @@ class Article(BaseModel):
         self.content = str(soup)
 
     def save(self, *args, **kwargs):
-        """
-        Override the save method to generate a unique slug, build table of contents,
-        track slug changes, and update article status based on scheduled publish time.
-        """
+        """Override the save method to generate a unique slug and build table of contents."""
         if not self.slug or self.title_update():
             self.slug = self.generate_unique_slug()
 
         """Override the save method to track slug changes."""
         if self.pk:  # If this is an existing article
             try:
-                old_instance = Article.objects.get(pk=self.pk)                
+                old_instance = Article.objects.get(pk=self.pk)
+                # Generate new slug first
+                if not self.slug or self.title_update():
+                    self.slug = self.generate_unique_slug()
                 
                 # Then check if we need to create slug history
                 if old_instance.slug and old_instance.slug != self.slug:
@@ -100,8 +100,8 @@ class Article(BaseModel):
                         old_slug=old_instance.slug
                     )
             except Article.DoesNotExist:
-                pass      
-        
+                pass  
+       
         if self.content:
             self.build_table_of_contents()
         
