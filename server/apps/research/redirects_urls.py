@@ -10,4 +10,6 @@ urlpatterns = [
          RedirectView.as_view(url='/api/articles/EIP-7685-General-Purpose-Execution-Requests/', permanent=True)),
     path('api/articles/charting-ethereums-account-abstraction-roadmap-1/', 
          RedirectView.as_view(url='/api/articles/charting-ethereums-account-abstraction-roadmap-i-eip-3074-eip-7702/', permanent=True)),
+    path('api/articles/eip-7762-eip-7691-proposals-for-blobs/', 
+         RedirectView.as_view(url='/api/articles/eip-7762-eip-7691-making-ethereum-blobs-great-again/', permanent=True)),
 ]
