@@ -7,6 +7,7 @@ import uuid
 import logging
 from django.db import transaction
 from rest_framework import serializers
+from urllib.parse import quote
 
 
 from .models import Article, ArticleSlugHistory
@@ -80,8 +81,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
                         instance = slug_history.article
                         # Return a redirect response with the new URL
                         new_url = request.build_absolute_uri().replace(
-                            f'/api/articles/{identifier}/',
-                            f'/api/articles/{instance.slug}/'
+                            f'/api/articles/{quote(identifier)}/',
+                            f'/api/articles/{quote(instance.slug)}/'
                         )
                         return Response({
                             'type': 'redirect',
