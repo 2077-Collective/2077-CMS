@@ -15,8 +15,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # third party imports
-from .celery_config import *
-from .mail import *
+from .celery_config import (CELERY_BROKER_URL, CELERY_RESULT_BACKEND, CELERY_ACCEPT_CONTENT, CELERY_TASK_SERIALIZER, CELERY_RESULT_SERIALIZER, CELERY_TIMEZONE)
+from .mail import (SITE_URL, EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL, EMAIL_PORT, EMAIL_USE_TLS, EMAIL_USE_SSL, EMAIL_BACKEND)
 
 load_dotenv()
 from decouple import config
