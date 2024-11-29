@@ -106,6 +106,16 @@ body {
 
 .slug-history-table th {
   background-color: #f5f5f5;
+  background-color: var(--gray-1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .slug-history-table th {
+  background-color: var(--gray-7);
+  }
+  .slug-history-table th, .slug-history-table td {
+  border-color: var(--gray-6);
+  }
 }
 
 .slug-history-table caption {
