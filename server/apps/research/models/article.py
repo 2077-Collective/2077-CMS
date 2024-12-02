@@ -10,6 +10,7 @@ from tinymce.models import HTMLField
 import json
 from bs4 import BeautifulSoup
 import uuid
+from django.db import transaction
 
 def get_default_thumb():
     return f"{settings.MEDIA_URL}images/2077-Collective.png"
@@ -95,10 +96,11 @@ class Article(BaseModel):
                 # Then check if we need to create slug history
                 if old_instance.slug and old_instance.slug != self.slug:
                     # Only create history if the slug actually changed and isn't empty
-                    ArticleSlugHistory.objects.create(
-                        article=self,
-                        old_slug=old_instance.slug
-                    )
+                    with transaction.atomic():
+                        ArticleSlugHistory.objects.create(
+                            article=self,
+                            old_slug=old_instance.slug
+                        )
             except Article.DoesNotExist:
                 pass  
        
