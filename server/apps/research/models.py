@@ -2,6 +2,6 @@
 
 from .category import Category
 from .author import Author
-from .article import Article
+from .article import Article, ArticleSlugHistory
 
-__all__ = ['Category', 'Author', 'Article']
+__all__ = ['Category', 'Author', 'Article', 'ArticleSlugHistory']
