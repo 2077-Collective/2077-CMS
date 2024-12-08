@@ -13,7 +13,5 @@ class AuthorAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'twitter_username')
     
     def save_model(self, request, obj, form, change):
-        """Automatically set the author to the logged-in user when creating a new author."""
-        if not change:  # If creating a new author
-            obj.user = request.user  
+        """Save the model instance to the database."""
         super().save_model(request, obj, form, change)
