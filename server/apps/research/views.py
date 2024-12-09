@@ -102,7 +102,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                           status=status.HTTP_404_NOT_FOUND)
     
     # Custom action to retrieve articles by category
-    @action(detail=False, methods=['get'], url_path=r'category/(?P<category>[-\w]+)')
+    @action(detail=False, methods=['get'], url_path=r'category/(?P<category_slug>[-\w]+)')
     def retrieve_by_category(self, request, category_slug=None):
         """Retrieve article list by category."""
         try:
