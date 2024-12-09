@@ -10,3 +10,4 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('created_at',)
     ordering = ('name',)
+    readonly_fields = ('slug',)
