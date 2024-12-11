@@ -25,7 +25,8 @@ class Article(BaseModel):
 
     title = models.TextField()
     content = HTMLField(blank=True, null=True)
-    summary = models.TextField(blank=True)
+    summary = HTMLField(blank=True, null=True)
+    gpt_summary = models.TextField(blank=True, null=True)
     acknowledgement = HTMLField(blank=True, null=True)
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
