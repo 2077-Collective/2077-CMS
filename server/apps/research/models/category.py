@@ -12,14 +12,15 @@ class Category(BaseModel):
         verbose_name_plural = 'Categories'
         
     def save(self, *args, **kwargs):
-        try:
-            if not self.slug:
-                self.slug = self.generate_slug()
-            if len(self.slug) > 255:
-                raise ValueError("Generated slug exceeds maximum length")
-        except ValueError as e:
-            raise ValueError(f"Failed to generate valid slug: {str(e)}")     
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            try:
+                if not self.slug:
+                    self.slug = self.generate_slug()
+                if len(self.slug) > 255:
+                    raise ValueError("Generated slug exceeds maximum length")
+            except ValueError as e:
+                raise ValueError(f"Failed to generate valid slug") from e
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
