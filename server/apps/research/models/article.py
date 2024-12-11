@@ -241,7 +241,7 @@ class RelatedArticle(models.Model):
             if self.from_article.pk:
                 RelatedArticle.objects.select_for_update().filter(
                     from_article=self.from_article
-                )
+                ).exists()
             self.clean()
             super().save(*args, **kwargs)
 
