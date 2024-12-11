@@ -18,7 +18,7 @@ class ArticleForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['acknowledgement'].widget = TinyMCE(attrs={'cols': 80, 'rows': 30, 'id': "acknowledgement_richtext_field", 'placeholder': f"Enter Acknowledgement here"})
         self.fields['content'].widget = TinyMCE(attrs={'cols': 80, 'rows': 30, 'id': "content_richtext_field", 'placeholder': f"Enter Article Content here"})
-        self.fields['summary'].widget = TinyMCE(attrs={'cols': 80, 'rows': 30, 'id': "summary_richtext_field", 'placeholder': f"Article summary will be generated here"})
+        self.fields['gpt_summary'].widget = TinyMCE(attrs={'cols': 80, 'rows': 15, 'id': "gpt_summary_richtext_field", 'placeholder': f"GPT-generated summary will appear here"})
 
 class ArticleAdmin(admin.ModelAdmin):
     """Admin interface for the Article model."""
@@ -42,7 +42,7 @@ class ArticleAdmin(admin.ModelAdmin):
             "to fully understand the piece without needing to read the original. Your summary should:\n"
             "- Provide enough depth and detail so the user gets a complete understanding of the core ideas.\n"
             "- Be in HTML format, use <h3> tags for headings if needed. Avoid other heading levels.\n"
-            "- Minimize the use of bullet points. If you need to list items, you can, but prefer concise paragraph formatting.\n"
+            "- Minimize the use of bullet points. If you need to list items, you can, but prefer concise paragraph formatting.\n\n"
         )
         return await self.gpt_service.prompt(system_prompt, content)
 
@@ -51,8 +51,8 @@ class ArticleAdmin(admin.ModelAdmin):
             content = request.POST.get('content')
             try:
                 # Run the async function in the sync view
-                summary = asyncio.run(self._generate_summary(content))
-                return JsonResponse({'summary': summary})
+                gpt_summary = asyncio.run(self._generate_summary(content))
+                return JsonResponse({'summary': gpt_summary})
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'error': 'Invalid request method'}, status=400)
@@ -62,7 +62,7 @@ class ArticleAdmin(admin.ModelAdmin):
     current_slug_history.short_description = 'Slug Change History'
     
     fieldsets = [
-        ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
+        ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'gpt_summary', 'status', 'scheduled_publish_time']}),
         ('Sponsorship Details', {'fields': ['is_sponsored', 'sponsor_color', 'sponsor_text_color']}),
         ('URL Management', {
             'fields': ('current_slug_history',),

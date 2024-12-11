@@ -1,57 +1,56 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Add generate summary button after the content field
-    const contentField = document.getElementById('content_richtext_field');
-    const summaryField = document.getElementById('summary_richtext_field');
-    if (contentField) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = 'generate-summary-btn';
-        button.className = 'generate-summary-btn';
-        button.textContent = 'Generate Summary';
-        button.style.height = 'min-content';
+    // Wait for TinyMCE to initialize
+    if (typeof tinymce !== 'undefined') {
+        const gptSummaryContainer = document.getElementById('gpt_summary_richtext_field');
+        if (gptSummaryContainer) {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.id = 'generate-summary-container-btn';
 
-        const statusSpan = document.createElement('span');
-        statusSpan.className = 'summary-status';
-        statusSpan.id = 'summary-status';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.id = 'generate-summary-btn';
+            button.className = 'generate-summary-btn';
+            button.textContent = 'Generate Summary';
 
-        summaryField.parentNode.insertBefore(button, summaryField.nextSibling);
-        button.parentNode.insertBefore(statusSpan, button.nextSibling);
+            const statusSpan = document.createElement('p');
+            statusSpan.className = 'summary-status';
+            statusSpan.id = 'summary-status';
 
-        // Add click event listener to the button
-        button.addEventListener('click', function() {
-            const editor = tinymce.get('content_richtext_field');
-            const summaryEditor = tinymce.get('summary_richtext_field');
-            
-            if (editor && summaryEditor) {
-                const content = editor.getContent();
-                if (!content.trim()) {
-                    alert('Please enter some content before generating a summary.');
-                    return;
-                }
+            buttonContainer.appendChild(button);
+            buttonContainer.appendChild(statusSpan);
 
-                // Disable both editors and the button
-                editor.setMode('readonly');
-                summaryEditor.setMode('readonly');
-                button.disabled = true;
+            gptSummaryContainer.parentNode.insertBefore(buttonContainer, gptSummaryContainer.nextSibling);
+            button.parentNode.insertBefore(statusSpan, button.nextSibling);
+
+            button.addEventListener('click', function() {
+                const contentEditor = tinymce.get('content_richtext_field');
+                const gptSummaryContainer = document.getElementById('gpt_summary_richtext_field');
                 statusSpan.textContent = ' Generating summary...';
+                
+                if (contentEditor && gptSummaryContainer) {
+                    const content = contentEditor.getContent();
+                    if (!content.trim()) {
+                        alert('Please enter some content before generating a summary.');
+                        return;
+                    }
 
-                // Call the GPT API
-                generateSummary(content)
-                    .then(() => {
-                        statusSpan.textContent = ' Summary generated successfully!';
-                    })
-                    .catch(error => {
-                        console.error('Error generating summary:', error);
-                        statusSpan.textContent = ' Error generating summary. Please try again.';
-                    })
-                    .finally(() => {
-                        // Re-enable both editors and the button
-                        editor.setMode('design');
-                        summaryEditor.setMode('design');
-                        button.disabled = false;
-                    });
-            }
-        });
+                    // Call the GPT API
+                    generateSummary(content)
+                        .then(() => {
+                            statusSpan.textContent = ' Summary generated successfully!';
+                        })
+                        .catch(error => {
+                            statusSpan.textContent = ' Error generating summary. Please try again.';
+                        })
+                        .finally(() => {
+                            // Re-enable editors and button
+                            contentEditor.setMode('design');
+                            gptSummaryEditor.setMode('design');
+                            button.disabled = false;
+                        });
+                }
+            });
+        }
     }
 });
 
@@ -74,7 +73,7 @@ async function generateSummary(content) {
         
         // Update the summary field
         if (typeof tinymce !== 'undefined') {
-            const summaryEditor = tinymce.get('summary_richtext_field');
+            const summaryEditor = tinymce.get('gpt_summary_richtext_field');
             if (summaryEditor) {
                 summaryEditor.setContent(data.summary);
             }

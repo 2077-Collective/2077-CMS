@@ -1,5 +1,5 @@
 .generate-summary-btn {
-    background-color: #417690;
+    background-color: #0C4B33;
     color: white;
     padding: 10px 15px;
     border: none;
@@ -7,10 +7,7 @@
     cursor: pointer;
     font-weight: bold;
     margin-left: 10px;
-}
-
-.generate-summary-btn:hover {
-    background-color: #2b5172;
+    align-self: baseline;
 }
 
 .generate-summary-btn:disabled {
@@ -22,4 +19,10 @@
     margin-left: 10px;
     font-style: italic;
     color: #666;
+}
+
+.generate-summary-container-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
