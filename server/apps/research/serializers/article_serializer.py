@@ -99,7 +99,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
         """Update an existing article instance."""
         authors = validated_data.pop('authors', [])
         categories = validated_data.pop('categories', [])
-        related_article_ids = validated_data.pop('related_articles_ids', [])
+        related_article_ids = validated_data.pop('related_article_ids', [])
         
         try:
             instance = super().update(instance, validated_data)

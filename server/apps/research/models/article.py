@@ -204,6 +204,8 @@ class RelatedArticle(models.Model):
             raise ValidationError("Maximum of 3 related articles allowed.")
         
     def save(self, *args, **kwargs):
+        # Acquire a lock on related articles for this from_article
+        RelatedArticle.objects.select_for_update().filter(from_article=self.from_article)
         self.clean()
         super().save(*args, **kwargs)
 
