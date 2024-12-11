@@ -16,13 +16,23 @@ class RelatedArticleInline(admin.TabularInline):
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'to_article':
+            # Get the parent object (Article) from the request
+            obj_id = request.resolver_match.kwargs.get('object_id')
+            parent_obj = None
+            
+            if obj_id:
+                try:
+                    parent_obj = Article.objects.get(pk=obj_id)
+                except Article.DoesNotExist:
+                    pass
+                
             base_queryset = Article.objects.filter(status='ready')
-            if self.parent_obj:
+            if parent_obj:
                 # Exclude self-reference and articles that already have a relationship
                 base_queryset = base_queryset.exclude(
-                    id=self.parent_obj.id
+                    id=parent_obj.id
                 ).exclude(
-                    from_articles__to_article=self.parent_obj
+                    related_from__to_article=parent_obj
                 )
                 kwargs['queryset'] = base_queryset
         return super().formfield_for_foreignkey(db_field, request, **kwargs)

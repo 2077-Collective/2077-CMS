@@ -9,10 +9,6 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        exclude = [
-            'content', 'scheduled_publish_time', 'acknowledgement', 
-            'status', 'views', 'created_at', 'updated_at', 'table_of_contents'
-        ]
         fields = ['id', 'title', 'slug', 'categories', 'authors']
 
 class RelatedArticleSerializer(serializers.ModelSerializer):
