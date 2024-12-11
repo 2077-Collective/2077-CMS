@@ -4,10 +4,17 @@ from django.db import migrations, models
 
 def remove_duplicate_slugs(apps, schema_editor):
     Category = apps.get_model('research', 'Category')
-    duplicate_slugs = Category.objects.values('slug').annotate(count=models.Count('slug')).filter(count__gt=1)
-    for slug in duplicate_slugs:
-        Category.objects.filter(slug=slug['slug']).exclude(id=models.Min('id')).delete()
-        
+    seen_slugs = {}
+    
+    for category in Category.objects.order_by('id'):
+        base_slug = category.slug
+        counter = 1
+        while category.slug in seen_slugs:
+            category.slug = f"{base_slug}-{counter}"
+            counter += 1
+        seen_slugs[category.slug] = True
+        category.save()
+
 class Migration(migrations.Migration):
 
     dependencies = [
