@@ -18,24 +18,23 @@ class RelatedArticleInline(admin.TabularInline):
         if db_field.name == 'to_article':
             # Get the parent object (Article) from the request
             obj_id = request.resolver_match.kwargs.get('object_id')
-            parent_obj = None
+            # For new articles (when obj_id is None), show all ready articles
+            base_queryset = Article.objects.filter(status='ready')
             
             if obj_id:
                 try:
                     parent_obj = Article.objects.get(pk=obj_id)
+                    # Exclude self-reference and articles that already have a relationship
+                    base_queryset = base_queryset.exclude(
+                        id=parent_obj.id
+                    ).exclude(
+                        related_from__to_article=parent_obj
+                    )
                 except Article.DoesNotExist:
                     pass
                 
-            base_queryset = Article.objects.filter(status='ready')
-            if parent_obj:
-                # Exclude self-reference and articles that already have a relationship
-                base_queryset = base_queryset.exclude(
-                    id=parent_obj.id
-                ).exclude(
-                    related_from__to_article=parent_obj
-                )
             kwargs['queryset'] = base_queryset
-            return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
@@ -56,9 +55,18 @@ class ArticleAdmin(admin.ModelAdmin):
     current_slug_history.short_description = 'Slug Change History'
     
     def get_inlines(self, request, obj):
-        if obj is None:
-            return []
-        return super().get_inlines(request, obj)
+        # Allow inlines for both new and existing articles
+        return [RelatedArticleInline]
+    
+    def save_related(self, request, form, formsets, change):
+        """Handle saving related articles for both new and existing articles."""
+        super().save_related(request, form, formsets, change)
+        
+        # Process related articles from inline formsets
+        for formset in formsets:
+            if isinstance(formset, RelatedArticleInline):
+                # The related articles will be saved automatically through the formset
+                pass
     
     fieldsets = [
         ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
