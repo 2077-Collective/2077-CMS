@@ -53,16 +53,10 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
         model = Article
         fields = ['title', 'slug', 'categories', 'thumb', 'content', 'summary', 'acknowledgement', 'status', 'authors', 'scheduled_publish_time', 'is_sponsored', 'sponsor_color', 'sponsor_text_color', 'related_article_ids']
     
-    def validate_related_article_ids(self, value):
-        """Validate related articles."""
+    def validate_related_articles_ids(self, value):
+        """Validate related articles"""
         if len(value) > 3:
             raise serializers.ValidationError("You can only have a maximum of 3 related articles.")
-            
-        # Check for self-reference
-        instance = self.instance
-        if instance and instance.id in [article.id for article in value]:
-            raise serializers.ValidationError("An article cannot be related to itself.")
-            
         return value
     
     def create(self, validated_data: dict) -> Article:
@@ -78,19 +72,18 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                 if user_author:
                     authors = [user_author]
 
-            # Create and save the article first
-            article = Article.objects.create(**validated_data)
+            article = Article(**validated_data)
+            article.save()
 
             if authors:
                 article.authors.set(authors)
             if categories:
                 article.categories.set(categories)
                 
-            # Handle related articles after the article is created
+            # Handle related articles
             for related_article in related_article_ids:
                 RelatedArticle.objects.create(
-                    from_article=article,
-                    to_article=related_article
+                    from_article=article, to_article=related_article
                 )
 
             return article
