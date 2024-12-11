@@ -54,7 +54,9 @@ class ArticleAdmin(admin.ModelAdmin):
                 gpt_summary = asyncio.run(self._generate_summary(content))
                 return JsonResponse({'summary': gpt_summary})
             except Exception as e:
-                return JsonResponse({'error': str(e)}, status=500)
+                import logging
+                logging.error("An error occurred while generating the summary", exc_info=True)
+                return JsonResponse({'error': 'An internal error has occurred!'}, status=500)
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
     def current_slug_history(self, obj):
