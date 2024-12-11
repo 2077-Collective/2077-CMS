@@ -34,8 +34,8 @@ class RelatedArticleInline(admin.TabularInline):
                 ).exclude(
                     related_from__to_article=parent_obj
                 )
-                kwargs['queryset'] = base_queryset
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+            kwargs['queryset'] = base_queryset
+            return super().formfield_for_foreignkey(db_field, request, **kwargs)
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
