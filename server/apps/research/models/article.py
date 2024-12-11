@@ -119,6 +119,14 @@ class Article(BaseModel):
 
     def save(self, *args, **kwargs):
         """Override the save method to generate a unique slug and build table of contents."""
+        is_new = self.pk is None
+        temp_related_articles = []
+
+        # If this is a new article and there are related articles in the form
+        if is_new and hasattr(self, "_temp_related_articles"):
+            temp_related_articles = self._temp_related_articles
+            delattr(self, "_temp_related_articles")
+
         if not self.slug or self.title_update():
             self.slug = self.generate_unique_slug()
 
@@ -150,7 +158,24 @@ class Article(BaseModel):
         ):
             self.status = "ready"
 
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+
+            # If this was a new article and we had temporary related articles
+            if is_new and temp_related_articles:
+                for related_article in temp_related_articles:
+                    RelatedArticle.objects.create(
+                        from_article=self, to_article=related_article
+                    )
+
+    def set_temp_related_articles(self, related_articles):
+        """
+        Store related articles temporarily before the initial save.
+
+        Args:
+            related_articles: List of Article instances to be related
+        """
+        self._temp_related_articles = related_articles
 
     def generate_unique_slug(self):
         """Generate a unique slug for the article."""
@@ -174,7 +199,7 @@ class Article(BaseModel):
 
 class RelatedArticle(models.Model):
     """Through model for related articles to prevent circular references."""
-    
+
     from_article = models.ForeignKey(
         Article, on_delete=models.CASCADE, related_name="related_from"
     )
@@ -191,23 +216,35 @@ class RelatedArticle(models.Model):
                 name="prevent_self_reference",
             )
         ]
-        
+
     def clean(self):
         # Prevent direct circular references
-        if RelatedArticle.objects.filter(
-            from_article=self.to_article, to_article=self.from_article
-        ).exists():
+        if (
+            self.from_article.pk
+            and RelatedArticle.objects.filter(
+                from_article=self.to_article, to_article=self.from_article
+            ).exists()
+        ):
             raise ValidationError("Circular references detected.")
-        
+
         # Maximum of 3 related articles
-        if RelatedArticle.objects.filter(from_article=self.from_article).count() >= 3:
+        if (
+            self.from_article.pk
+            and RelatedArticle.objects.filter(from_article=self.from_article).count()
+            >= 3
+        ):
             raise ValidationError("Maximum of 3 related articles allowed.")
-        
+
     def save(self, *args, **kwargs):
-        # Acquire a lock on related articles for this from_article
-        RelatedArticle.objects.select_for_update().filter(from_article=self.from_article)
-        self.clean()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            # Only acquire lock if from_article exists in database
+            if self.from_article.pk:
+                RelatedArticle.objects.select_for_update().filter(
+                    from_article=self.from_article
+                ).exists()
+            self.clean()
+            super().save(*args, **kwargs)
+
 
 class ArticleSlugHistory(models.Model):
     """Model to track historical slugs for articles."""
