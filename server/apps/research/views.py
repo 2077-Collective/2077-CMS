@@ -102,13 +102,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
                           status=status.HTTP_404_NOT_FOUND)
     
     # Custom action to retrieve articles by category
-    @action(detail=False, methods=['get'], url_path=r'category/(?P<category_slug>[-\w]+)')
-    def retrieve_by_category(self, request, category_slug=None):
+    @action(detail=False, methods=['get'], url_path=r'category/(?P<category>[-\w]+)')
+    def retrieve_by_category(self, request, category=None):
         """Retrieve article list by category."""
         try:
-            instances = Article.objects.filter(categories__slug=category_slug)
-            if not instances.exists():
-                return Response({'error': 'No articles found for this category'}, status=status.HTTP_404_NOT_FOUND)
+            instances = Article.objects.filter(categories__name=category)
             serializer = self.get_serializer(instances, many=True)
             return Response({'success': True, 'data': serializer.data})
         except Exception as e:
