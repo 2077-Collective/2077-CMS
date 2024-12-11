@@ -16,7 +16,13 @@ class RelatedArticleInline(admin.TabularInline):
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'to_article':
-            kwargs['queryset'] = Article.objects.filter(status='ready')
+            base_queryset = Article.objects.filter(status='ready')
+            if self.instance and self.instance.from_article:
+                # Exclude self-reference and articles that already have a relationship
+                base_queryset = base_queryset.exclude(id=self.instance.from_article.id).exclude(
+                    from_articles__to_article=self.instance.from_article
+                )
+                kwargs['queryset'] = base_queryset
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 class ArticleForm(forms.ModelForm):
     class Meta:

@@ -9,11 +9,11 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        include = ['categories', 'authors']
         exclude = [
             'content', 'scheduled_publish_time', 'acknowledgement', 
             'status', 'views', 'created_at', 'updated_at', 'table_of_contents'
         ]
+        fields = ['id', 'title', 'slug', 'categories', 'authors']
 
 class RelatedArticleSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(source='to_article.id', read_only=True)
@@ -45,7 +45,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     def get_related_articles(self, obj):
         """Return the related articles for the article."""
         related_articles = obj.get_related_articles()
-        return ArticleListSerializer(obj.get_related_articles(), many=True).data
+        return ArticleListSerializer(related_articles, many=True).data
 
 class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating and updating articles."""
@@ -68,7 +68,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         authors = validated_data.pop('authors', [])
         categories = validated_data.pop('categories', [])
-        related_article_ids = validated_data.pop('related_articles_ids', [])
+        related_article_ids = validated_data.pop('related_article_ids', [])
 
         try:
             if not authors and request and hasattr(request, 'user'):

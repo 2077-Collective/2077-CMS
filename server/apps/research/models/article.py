@@ -174,7 +174,7 @@ class Article(BaseModel):
 
 class RelatedArticle(models.Model):
     """Through model for related articles to prevent circular references."""
-
+    
     from_article = models.ForeignKey(
         Article, on_delete=models.CASCADE, related_name="related_from"
     )
