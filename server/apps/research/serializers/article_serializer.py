@@ -47,6 +47,15 @@ class ArticleSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({
             "non_field_errors": [f"Unable to {operation_type} article. Please try again later."]
         }) from error
+        
+    class Meta:
+        model = Article
+        fields = [
+            'id', 'title', 'slug', 'categories', 'authors', 'thumb',
+            'content', 'summary', 'acknowledgement', 'status',
+            'scheduled_publish_time', 'is_sponsored', 'sponsor_color',
+            'sponsor_text_color', 'views'
+        ]
 
     def create(self, validated_data):
         try:
