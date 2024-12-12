@@ -136,6 +136,8 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
             
             if related_article_ids is not None:
                 with transaction.atomic():
+                    # Lock the article for update
+                    article = Article.objects.select_for_update().get(id=article.id)
                     # Delete existing relations first
                     RelatedArticle.objects.filter(from_article=article).delete()
                 
