@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.db import transaction
 import logging
+from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from ..models import Article, Author, Category, RelatedArticle
 from .author_serializer import AuthorSerializer
@@ -32,7 +33,11 @@ class ArticleSerializer(serializers.ModelSerializer):
         Centralized error handling for article operations
         """
         if isinstance(error, DjangoValidationError):
-            raise serializers.ValidationError(error.message_dict) from error
+            if settings.DEBUG:
+                raise serializers.ValidationError(error.message_dict) from error
+            raise serializers.ValidationError({
+                "non_field_errors": ["Invalid data provided."]
+            }) from error
         
         logger.error(
             f"Error {operation_type} article",
@@ -148,7 +153,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                 },
                 exc_info=True
             )
-            raise serializers.ValidationError(f"Related object not found: {str(e)}") from e
+            raise serializers.ValidationError("Related object not found") from e
         
         except Exception as e:
             logger.error(
@@ -162,7 +167,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                 },
                 exc_info=True
             )
-            raise serializers.ValidationError("Error setting related objects") from e
+            raise serializers.ValidationError("An error occurred while setting related objects") from e
 
     def create(self, validated_data):
         """Create a new Article instance."""
