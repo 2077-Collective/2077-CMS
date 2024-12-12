@@ -111,18 +111,24 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
 
     def _handle_relations(self, article, authors, categories, related_article_ids):
         """Handle setting related objects for an article."""
-        if authors:
-            article.authors.set(authors)
-        if categories:
-            article.categories.set(categories)
+        try:
+            if authors:
+                article.authors.set(authors)
+            if categories:
+                article.categories.set(categories)
             
-        if related_article_ids is not None:
-            with transaction.atomic():
-                RelatedArticle.objects.filter(from_article=article).delete()
-                RelatedArticle.objects.bulk_create([
-                    RelatedArticle(from_article=article, to_article=related_article)
-                    for related_article in related_article_ids
-                ])
+            if related_article_ids is not None:
+                with transaction.atomic():
+                    RelatedArticle.objects.filter(from_article=article).delete()
+                    RelatedArticle.objects.bulk_create([
+                        RelatedArticle(from_article=article, to_article=related_article)
+                        for related_article in related_article_ids
+                    ])
+        except (Article.DoesNotExist, Author.DoesNotExist, Category.DoesNotExist) as e:
+            raise serializers.ValidationError(f"Related object not found: {str(e)}")
+        except Exception as e:
+            logger.error("Error handling relations", exc_info=True)
+            raise serializers.ValidationError("Error setting related objects")
 
     def create(self, validated_data):
         """Create a new Article instance."""
