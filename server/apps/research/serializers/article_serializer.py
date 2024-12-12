@@ -57,44 +57,53 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
         """Validate related articles."""
         if len(value) > 3:
             raise serializers.ValidationError("You can only have a maximum of 3 related articles.")
-            
-        # Check for self-reference
-        instance = self.instance
-        if instance and instance.id in [article.id for article in value]:
-            raise serializers.ValidationError("An article cannot be related to itself.")
-            
-        return value
     
-    def create(self, validated_data: dict) -> Article:
-        """Create a new article instance."""
+        # Check for self-reference
+        article_id = self.instance.id if self.instance else None
+        if article_id is None:  # During creation, we check the request data for article ID
+            request = self.context.get('request')
+            if request and hasattr(request, 'data'):
+                article_id = request.data.get('id')
+    
+        if article_id and article_id in [article.id for article in value]:
+            raise serializers.ValidationError("An article cannot be related to itself.")
+    
+        return value
+
+    
+    def create(self, validated_data):
+        """Create a new Article instance."""
         request = self.context.get('request')
         authors = validated_data.pop('authors', [])
         categories = validated_data.pop('categories', [])
         related_article_ids = validated_data.pop('related_article_ids', [])
 
         try:
+            # Assign default author if none provided
             if not authors and request and hasattr(request, 'user'):
                 user_author = Author.objects.filter(user=request.user).first()
                 if user_author:
                     authors = [user_author]
 
-            # Create and save the article first
+            # Create the article instance
             article = Article.objects.create(**validated_data)
 
+            # Associate authors and categories
             if authors:
                 article.authors.set(authors)
             if categories:
                 article.categories.set(categories)
-                
-            # Handle related articles after the article is created
-            for related_article in related_article_ids:
-                RelatedArticle.objects.create(
-                    from_article=article,
-                    to_article=related_article
-                )
+
+            # Bulk create related articles
+            related_articles = [
+                RelatedArticle(from_article=article, to_article=related_article)
+                for related_article in related_article_ids
+            ]
+            RelatedArticle.objects.bulk_create(related_articles)
 
             return article
-        except Exception as e:            
+
+        except Exception as e:
             raise serializers.ValidationError(f"Error creating article: {str(e)}")
 
 

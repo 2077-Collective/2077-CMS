@@ -16,18 +16,34 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('from_article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='related_from', to='research.article')),
-                ('to_article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='related_to', to='research.article')),
+                ('from_article', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='related_from',
+                    to='research.article',
+                )),
+                ('to_article', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='related_to',
+                    to='research.article',
+                )),
             ],
         ),
         migrations.AddField(
             model_name='article',
             name='related_articles',
-            field=models.ManyToManyField(blank=True, related_name='referenced_by', through='research.RelatedArticle', to='research.article'),
+            field=models.ManyToManyField(
+                blank=True,
+                related_name='referenced_by',
+                through='research.RelatedArticle',
+                to='research.article',
+            ),
         ),
         migrations.AddConstraint(
             model_name='relatedarticle',
-            constraint=models.CheckConstraint(check=models.Q(('from_article', models.F('to_article')), _negated=True), name='prevent_self_reference'),
+            constraint=models.CheckConstraint(
+                check=~models.Q(from_article=models.F('to_article')),
+                name='prevent_self_reference',
+            ),
         ),
         migrations.AlterUniqueTogether(
             name='relatedarticle',

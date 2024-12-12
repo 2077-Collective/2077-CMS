@@ -1,6 +1,10 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.core.exceptions import ValidationError
+from django.db.utils import IntegrityError
+from django.db import transaction
+from .models import Article, RelatedArticle
 from .models import Article
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -98,3 +102,114 @@ class ArticleModelTest(TestCase):
         article.save()
         article.refresh_from_db()
         self.assertEqual(article.views, 1)
+        
+class RelatedArticleModelTest(TestCase):
+    def setUp(self):
+        # Create test articles without author field
+        self.article1 = Article.objects.create(
+            title='Test Article 1',
+            content='Content 1',
+            status='ready'
+        )
+        self.article2 = Article.objects.create(
+            title='Test Article 2',
+            content='Content 2',
+            status='ready'
+        )
+        self.article3 = Article.objects.create(
+            title='Test Article 3',
+            content='Content 3',
+            status='ready'
+        )
+        self.article4 = Article.objects.create(
+            title='Test Article 4',
+            content='Content 4',
+            status='ready'
+        )
+
+    def test_prevent_self_reference(self):
+        """Test that an article cannot be related to itself"""
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                RelatedArticle.objects.create(
+                    from_article=self.article1,
+                    to_article=self.article1
+                )
+
+    def test_prevent_circular_reference(self):
+        """Test that circular references are prevented"""
+        # Create first relationship
+        RelatedArticle.objects.create(
+            from_article=self.article1,
+            to_article=self.article2
+        )
+        
+        # Attempt to create circular reference
+        with self.assertRaises(ValidationError):
+            RelatedArticle.objects.create(
+                from_article=self.article2,
+                to_article=self.article1
+            )
+
+    def test_maximum_related_articles(self):
+        """Test that maximum of 3 related articles is enforced"""
+        # Create three related articles
+        RelatedArticle.objects.create(
+            from_article=self.article1,
+            to_article=self.article2
+        )
+        RelatedArticle.objects.create(
+            from_article=self.article1,
+            to_article=self.article3
+        )
+        RelatedArticle.objects.create(
+            from_article=self.article1,
+            to_article=self.article4
+        )
+
+        # Create fifth article and attempt to add it as fourth relation
+        article5 = Article.objects.create(
+            title='Test Article 5',
+            content='Content 5',
+            status='ready'
+        )
+
+        # Attempt to add fourth related article
+        with self.assertRaises(ValidationError):
+            RelatedArticle.objects.create(
+                from_article=self.article1,
+                to_article=article5
+            )
+
+    def test_unique_relationships(self):
+        """Test that duplicate relationships are prevented"""
+        # Create first relationship
+        RelatedArticle.objects.create(
+            from_article=self.article1,
+            to_article=self.article2
+        )
+
+        # Attempt to create duplicate relationship
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                RelatedArticle.objects.create(
+                    from_article=self.article1,
+                    to_article=self.article2
+                )
+
+    def test_get_related_articles(self):
+        """Test the get_related_articles method"""
+        # Create related articles
+        RelatedArticle.objects.create(
+            from_article=self.article1,
+            to_article=self.article2
+        )
+        RelatedArticle.objects.create(
+            from_article=self.article1,
+            to_article=self.article3
+        )
+
+        related = self.article1.get_related_articles()
+        self.assertEqual(related.count(), 2)
+        self.assertIn(self.article2, related)
+        self.assertIn(self.article3, related)

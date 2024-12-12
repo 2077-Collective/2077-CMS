@@ -151,12 +151,6 @@ class Article(BaseModel):
         if self.content:
             self.build_table_of_contents()
 
-        if (
-            self.scheduled_publish_time
-            and self.status == "draft"
-            and timezone.now() >= self.scheduled_publish_time
-        ):
-            self.status = "ready"
 
         with transaction.atomic():
             super().save(*args, **kwargs)
@@ -196,7 +190,6 @@ class Article(BaseModel):
                 return original.title != self.title
         return False
 
-
 class RelatedArticle(models.Model):
     """Through model for related articles to prevent circular references."""
 
@@ -214,37 +207,38 @@ class RelatedArticle(models.Model):
             models.CheckConstraint(
                 check=~models.Q(from_article=models.F("to_article")),
                 name="prevent_self_reference",
-            )
+            ),
         ]
 
     def clean(self):
+        if not self.from_article.pk:
+            return
+
         # Prevent direct circular references
-        if (
-            self.from_article.pk
-            and RelatedArticle.objects.filter(
-                from_article=self.to_article, to_article=self.from_article
-            ).exists()
-        ):
+        if RelatedArticle.objects.filter(
+            from_article=self.to_article,
+            to_article=self.from_article
+        ).exists():
             raise ValidationError("Circular references detected.")
 
-        # Maximum of 3 related articles
-        if (
-            self.from_article.pk
-            and RelatedArticle.objects.filter(from_article=self.from_article).count()
-            >= 3
-        ):
+        # Maximum of 3 related articles (only check for new records)
+        if not self.pk and RelatedArticle.objects.filter(
+            from_article=self.from_article
+        ).count() >= 3:
             raise ValidationError("Maximum of 3 related articles allowed.")
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
-            # Only acquire lock if from_article exists in database
             if self.from_article.pk:
-                RelatedArticle.objects.select_for_update().filter(
+                # Lock all related records for this from_article
+                locked_relations = RelatedArticle.objects.select_for_update().filter(
                     from_article=self.from_article
-                ).exists()
+                )
+                # Force evaluation of the queryset to acquire the lock
+                list(locked_relations)
+
             self.clean()
             super().save(*args, **kwargs)
-
 
 class ArticleSlugHistory(models.Model):
     """Model to track historical slugs for articles."""
