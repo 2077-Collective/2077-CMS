@@ -1,11 +1,40 @@
 from django.contrib import admin
 from django import forms
-from apps.research.models import Article, ArticleSlugHistory
+from apps.research.models import Article, ArticleSlugHistory, RelatedArticle
 from tinymce.widgets import TinyMCE
 from .slug_history import current_slug_history
 
 
+
+class RelatedArticleInline(admin.TabularInline):
+    model = RelatedArticle
+    fk_name = 'from_article'
+    extra = 1
+    max_num = 3
+    verbose_name = 'Related Article'
+    verbose_name_plural = 'Related Articles'
     
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'to_article':
+            # Get the parent object (Article) from the request
+            obj_id = request.resolver_match.kwargs.get('object_id')
+            # For new articles (when obj_id is None), show all ready articles
+            base_queryset = Article.objects.filter(status='ready')
+            
+            if obj_id:
+                try:
+                    parent_obj = Article.objects.get(pk=obj_id)
+                    # Exclude self-reference and articles that already have a relationship
+                    base_queryset = base_queryset.exclude(
+                        id=parent_obj.id
+                    ).exclude(
+                        related_from__to_article=parent_obj
+                    )
+                except Article.DoesNotExist:
+                    pass
+                
+            kwargs['queryset'] = base_queryset
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
@@ -19,9 +48,25 @@ class ArticleForm(forms.ModelForm):
 class ArticleAdmin(admin.ModelAdmin):
     """Admin interface for the Article model."""
     form = ArticleForm
+    inlines = [RelatedArticleInline]
+    
     def current_slug_history(self, obj):
         return current_slug_history(obj)
     current_slug_history.short_description = 'Slug Change History'
+    
+    def get_inlines(self, request, obj):
+        # Allow inlines for both new and existing articles
+        return [RelatedArticleInline]
+    
+    def save_related(self, request, form, formsets, change):
+        """Handle saving related articles for both new and existing articles."""
+        super().save_related(request, form, formsets, change)
+        
+        # Process related articles from inline formsets
+        for formset in formsets:
+            if isinstance(formset, RelatedArticleInline):
+                # The related articles will be saved automatically through the formset
+                pass
     
     fieldsets = [
         ('Article Details', {'fields': ['title', 'slug', 'authors', 'acknowledgement', 'categories', 'thumb', 'content', 'summary', 'status', 'scheduled_publish_time']}),
