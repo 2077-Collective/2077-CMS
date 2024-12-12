@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.core.exceptions import ValidationError as DjangoValidationError
 from ..models import Article, Author, Category, RelatedArticle
 from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
@@ -20,28 +21,51 @@ class RelatedArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelatedArticle
         fields = ['id', 'title', 'slug', 'thumb']
-
 class ArticleSerializer(serializers.ModelSerializer):
-    """Serializer for the Article model."""
-    authors = AuthorSerializer(many=True, read_only=True)
-    categories = CategorySerializer(many=True)       
-    views = serializers.ReadOnlyField()
-    min_read = serializers.ReadOnlyField()
-    related_articles = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Article
-        fields = [
-            'id', 'slug', 'title', 'authors', 'thumb', 'categories', 'summary',
-            'acknowledgement', 'content', 'min_read', 'status', 'views',
-            'created_at', 'updated_at', 'scheduled_publish_time', 'table_of_contents',
-            'is_sponsored', 'sponsor_color', 'sponsor_text_color', 'related_articles'
-        ]
-        
-    def get_related_articles(self, obj):
-        """Return the related articles for the article."""
-        related_articles = obj.get_related_articles()
-        return ArticleListSerializer(related_articles, many=True).data
+    def create(self, validated_data):
+        try:
+            # Your existing creation logic here
+            return super().create(validated_data)
+        except DjangoValidationError as e:
+            # Handle validation errors specifically, these are safe to expose
+            raise serializers.ValidationError(e.message_dict)
+        except Exception as e:
+            # Log the detailed error for debugging
+            logger.error(
+                "Error creating article",
+                extra={
+                    "validated_data": validated_data,
+                    "error": str(e)
+                },
+                exc_info=True
+            )
+            # Return a generic error message to the client
+            raise serializers.ValidationError({
+                "non_field_errors": ["Unable to create article. Please try again later."]
+            })
+
+    def update(self, instance, validated_data):
+        try:
+            # Your existing update logic here
+            return super().update(instance, validated_data)
+        except DjangoValidationError as e:
+            # Handle validation errors specifically
+            raise serializers.ValidationError(e.message_dict)
+        except Exception as e:
+            # Log the detailed error for debugging
+            logger.error(
+                "Error updating article",
+                extra={
+                    "instance_id": instance.id if instance else None,
+                    "validated_data": validated_data,
+                    "error": str(e)
+                },
+                exc_info=True
+            )
+            # Return a generic error message to the client
+            raise serializers.ValidationError({
+                "non_field_errors": ["Unable to update article. Please try again later."]
+            })
 
 class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating and updating articles."""
@@ -70,7 +94,6 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
     
         return value
 
-    
     def create(self, validated_data):
         """Create a new Article instance."""
         request = self.context.get('request')
@@ -103,9 +126,23 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
 
             return article
 
+        except DjangoValidationError as e:
+            # Handle validation errors specifically, these are safe to expose
+            raise serializers.ValidationError(e.message_dict)
         except Exception as e:
-            raise serializers.ValidationError(f"Error creating article: {str(e)}")
-
+            # Log the detailed error for debugging
+            logger.error(
+                "Error creating article",
+                extra={
+                    "validated_data": validated_data,
+                    "error": str(e)
+                },
+                exc_info=True
+            )
+            # Return a generic error message to the client
+            raise serializers.ValidationError({
+                "non_field_errors": ["Unable to create article. Please try again later."]
+            })
 
     def update(self, instance: Article, validated_data: dict) -> Article:
         """Update an existing article instance."""
@@ -132,5 +169,22 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                     )
 
             return instance
-        except Exception as e:          
-            raise serializers.ValidationError(f"Error updating article: {str(e)}")
+
+        except DjangoValidationError as e:
+            # Handle validation errors specifically
+            raise serializers.ValidationError(e.message_dict)
+        except Exception as e:
+            # Log the detailed error for debugging
+            logger.error(
+                "Error updating article",
+                extra={
+                    "instance_id": instance.id if instance else None,
+                    "validated_data": validated_data,
+                    "error": str(e)
+                },
+                exc_info=True
+            )
+            # Return a generic error message to the client
+            raise serializers.ValidationError({
+                "non_field_errors": ["Unable to update article. Please try again later."]
+            })
