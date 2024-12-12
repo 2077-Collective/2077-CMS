@@ -103,12 +103,13 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
         if len(value) > 3:
             raise serializers.ValidationError("You can only have a maximum of 3 related articles.")
     
+        # Check for duplicates
+        article_ids = [article.id for article in value]
+        if len(article_ids) != len(set(article_ids)):
+            raise serializers.ValidationError("Duplicate articles are not allowed.")
+        
         article_id = self.instance.id if self.instance else None
-        if article_id is None:
-            request = self.context.get('request')
-            if request and hasattr(request, 'data'):
-                article_id = request.data.get('id')
-    
+        
         if article_id and article_id in [article.id for article in value]:
             raise serializers.ValidationError("An article cannot be related to itself.")
     
