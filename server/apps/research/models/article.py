@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.core.exceptions import ValidationError
 from apps.common.models import BaseModel
 from apps.research.managers import ArticleObjects
 from .category import Category
@@ -39,6 +40,14 @@ class Article(BaseModel):
     is_sponsored = models.BooleanField(default=False)
     sponsor_color = models.CharField(max_length=7, default="#FF0420")
     sponsor_text_color = models.CharField(max_length=7, default="#000000")
+    related_articles = models.ManyToManyField(
+        'self',
+        blank=True,
+        symmetrical=False,
+        related_name='referenced_by',
+        verbose_name='Related Articles',
+        help_text='Select up to 3 related articles'
+    )
 
     objects = models.Manager()
     post_objects = ArticleObjects()
@@ -46,6 +55,12 @@ class Article(BaseModel):
     class Meta:
         ordering = ('-scheduled_publish_time',)
     
+    def clean(self):
+        super().clean()
+        # Ensure no more than 3 related articles are selected
+        if self.related_articles.count() > 3:
+            raise ValidationError({'related_articles': 'You can select up to 3 related articles only.'})
+
     def calculate_min_read(self):
         word_count = len(self.content.split())
         words_per_minute = 300  # Average reading speed (words per minute)
@@ -81,6 +96,24 @@ class Article(BaseModel):
         self.table_of_contents = toc
         self.content = str(soup)
 
+    def get_related_articles(self):
+        """
+        Returns manually selected related articles if they exist,
+        otherwise falls back to automatic recommendations
+        """
+        manual_related = self.related_articles.filter(status='ready').order_by('-scheduled_publish_time')[:3]
+        
+        if manual_related.exists():
+            return manual_related
+            
+        # Fallback logic - articles with matching categories
+        return Article.objects.filter(
+            status='ready',
+            categories__in=self.categories.all()
+        ).exclude(
+            id=self.id
+        ).distinct().order_by('-scheduled_publish_time')[:3]
+
     def save(self, *args, **kwargs):
         """Override the save method to generate a unique slug and build table of contents."""
         if not self.slug or self.title_update():
@@ -115,7 +148,6 @@ class Article(BaseModel):
 
     def generate_unique_slug(self):
         """Generate a unique slug for the article."""
-
         base_slug = slugify(self.title)
         slug = base_slug
         num = 1
@@ -144,7 +176,7 @@ class ArticleSlugHistory(models.Model):
         indexes = [
             models.Index(fields=['old_slug']),
         ]
-        db_table = 'research_articleslughistory'  # explicitly set table name
+        db_table = 'research_articleslughistory'
 
     def __str__(self):
         return f"{self.old_slug} -> {self.article.slug}"

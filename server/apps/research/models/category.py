@@ -6,15 +6,21 @@ from django.db import transaction
 class Category(BaseModel):
     """Model for categories."""
     name = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    slug = models.SlugField(max_length=255, blank=True)
 
     class Meta:
         verbose_name_plural = 'Categories'
         
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = self.generate_slug()        
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            try:
+                if not self.slug:
+                    self.slug = self.generate_slug()
+                if len(self.slug) > 255:
+                    raise ValueError("Generated slug exceeds maximum length")
+            except ValueError as e:
+                raise ValueError(f"Failed to generate valid slug") from e
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

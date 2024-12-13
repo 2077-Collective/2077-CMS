@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('research', '0016_alter_category_slug'),
+        ('research', '0016_article_related_articles'),
     ]
 
     operations = [
