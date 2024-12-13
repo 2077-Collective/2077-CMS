@@ -54,7 +54,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'categories', 'authors', 'thumb',
             'content', 'summary', 'acknowledgement', 'status',
             'scheduled_publish_time', 'is_sponsored', 'sponsor_color',
-            'sponsor_text_color', 'views'
+            'sponsor_text_color', 'views', 'related_articles', 'table_of_contents'
         ]
 
     def create(self, validated_data):
