@@ -100,7 +100,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
 
             return article
         except Exception as e:            
-            raise serializers.ValidationError(f"Error creating article: {str(e)}") from e
+            raise serializers.ValidationError(f"Error creating article: {str(e)}")
 
     def update(self, instance: Article, validated_data: dict) -> Article:
         """Update an existing article instance."""
