@@ -14,7 +14,7 @@ def remove_duplicate_slugs(apps, schema_editor):
             counter += 1
         seen_slugs[category.slug] = True
         category.save()
-        
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -27,4 +27,5 @@ class Migration(migrations.Migration):
             name='slug',
             field=models.SlugField(blank=True, max_length=255),
         ),
+        migrations.RunPython(remove_duplicate_slugs),
     ]
