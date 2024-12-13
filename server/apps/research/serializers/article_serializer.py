@@ -95,12 +95,12 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                 article.authors.set(authors)
             if categories:
                 article.categories.set(categories)
-            if related_articles:
+            if related_articles is not None:
                 article.related_articles.set(related_articles)
 
             return article
         except Exception as e:            
-            raise serializers.ValidationError(f"Error creating article: {str(e)}")
+            raise serializers.ValidationError(f"Error creating article: {str(e)}") from e
 
     def update(self, instance: Article, validated_data: dict) -> Article:
         """Update an existing article instance."""
@@ -115,7 +115,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                 instance.authors.set(authors)
             if categories:
                 instance.categories.set(categories)
-            if related_articles:
+            if related_articles is not None:
                 instance.related_articles.set(related_articles)
 
             return instance
