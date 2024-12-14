@@ -14,6 +14,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+# cloudinary
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
 # third party imports
 from .celery_config import (CELERY_BROKER_URL, CELERY_RESULT_BACKEND, CELERY_ACCEPT_CONTENT, CELERY_TASK_SERIALIZER, CELERY_RESULT_SERIALIZER, CELERY_TIMEZONE)
 from .mail import (SITE_URL, EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL, EMAIL_PORT, EMAIL_USE_TLS, EMAIL_USE_SSL, EMAIL_BACKEND)
@@ -58,7 +63,9 @@ LOCAL_APPS = [
 THIRD_PARTY_APPS = [
     'corsheaders',
     'django_celery_beat',
-    'tinymce',    
+    'tinymce',
+    'cloudinary_storage',
+    'cloudinary',   
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -173,15 +180,35 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+# cloudinary storage
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': config('CLOUDINARY_API_KEY'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET')
+}
+
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
+TINYMCE_DEFAULT_CONFIG = {
+    'images_upload_url': '/tinymce/upload/',
+    'images_upload_base_path': '',
+    'images_upload_credentials': True,
+    'file_picker_types': 'image',
+    'automatic_uploads': True,
+    'images_file_types': 'jpg,svg,webp,png',
+    'content_css': 'default',
+    'plugins': 'image autolink lists media table',
+    'toolbar1': 'formatselect | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | outdent indent | table | link image media | removeformat',
+    'width': '100%',
+    'height': 400
+}
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 

@@ -8,11 +8,13 @@ import logging
 from django.db import transaction
 from rest_framework import serializers
 from urllib.parse import quote
-
-
 from .models import Article, ArticleSlugHistory
 from .permissions import ArticleUserWritePermission
 from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer
+import cloudinary.uploader
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -122,3 +124,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return True
         except ValueError:
             return False
+
+@csrf_exempt
+def tinymce_upload_image(request):
+    if request.method == "POST" and request.FILES:
+        try:
+            file = request.FILES['file']
+            # Upload to a specific folder in Cloudinary
+            upload_data = cloudinary.uploader.upload(
+                file,
+                folder='article_content'  # This will create an article_content folder in Cloudinary
+            )
+            return JsonResponse({
+                'location': upload_data['secure_url']
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
+    return JsonResponse({'error': 'Invalid request'})
