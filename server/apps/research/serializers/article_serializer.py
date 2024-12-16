@@ -28,7 +28,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
         model = Article
         exclude = [
             'content', 'scheduled_publish_time', 'acknowledgement', 
-            'status', 'views', 'created_at', 'updated_at', 'table_of_contents'
+            'status', 'views', 'created_at', 'table_of_contents'
         ]
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -49,7 +49,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'id', 'slug', 'title', 'authors', 'thumb', 'categories', 'summary',
             'acknowledgement', 'content', 'min_read', 'status', 'views',
             'created_at', 'updated_at', 'scheduled_publish_time', 'table_of_contents',
-            'is_sponsored', 'sponsor_color', 'sponsor_text_color', 'related_articles'
+            'is_sponsored', 'sponsor_color', 'sponsor_text_color', 'related_articles', 'updated_at'
         ]
 
 class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
