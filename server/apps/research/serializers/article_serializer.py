@@ -47,7 +47,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'id', 'slug', 'title', 'authors', 'thumb', 'categories', 'summary',
-            'acknowledgement', 'content', 'min_read', 'status', 'views',
+            'acknowledgement', 'content', 'min_read', 'status', 'views', 'gpt_summary',
             'created_at', 'updated_at', 'scheduled_publish_time', 'table_of_contents',
             'is_sponsored', 'sponsor_color', 'sponsor_text_color', 'related_articles', 'updated_at'
         ]
@@ -66,8 +66,9 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
         model = Article
         fields = [
             'title', 'slug', 'categories', 'thumb', 'content', 'summary', 
-            'acknowledgement', 'status', 'authors', 'scheduled_publish_time', 
-            'is_sponsored', 'sponsor_color', 'sponsor_text_color', 'related_articles'
+            'gpt_summary', 'acknowledgement', 'status', 'authors', 
+            'scheduled_publish_time', 'is_sponsored', 'sponsor_color', 
+            'sponsor_text_color', 'related_articles'
         ]
     
     def validate_related_articles(self, value):
