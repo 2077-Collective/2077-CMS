@@ -1,3 +1,4 @@
+import re
 from django.conf import settings
 from openai import AsyncOpenAI
 
@@ -6,7 +7,7 @@ class GPTService:
     
     def __init__(self):
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o"
         self.max_tokens = 500
 
     async def prompt(self, system: str, user: str) -> str:
@@ -31,7 +32,7 @@ class GPTService:
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system},
-                    {"role": "user", "content": user}
+                    {"role": "user", "content": self.clear_message(user)}
                 ],
                 max_tokens=self.max_tokens
             )
@@ -39,4 +40,12 @@ class GPTService:
             return completion.choices[0].message.content
         except Exception as e:
             print(e)
-            raise Exception(f"Error calling OpenAI API: {str(e)}") 
+            raise Exception(f"Error calling OpenAI API: {str(e)}")
+
+    def clear_message(self, message: str) -> str:
+        """Clear the message of any HTML tags, line breaks and multiple whitespaces, replacing them with a single space."""
+        # First remove HTML tags and newlines
+        cleaned = re.sub(r'<[^>]*>|\n', ' ', message)
+        # Then replace multiple whitespaces with a single space
+        return re.sub(r'\s+', ' ', cleaned).strip()
+
