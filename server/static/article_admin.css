@@ -1,0 +1,28 @@
+.generate-summary-btn {
+    background-color: #0C4B33;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 10px;
+    align-self: baseline;
+}
+
+.generate-summary-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.summary-status {
+    margin-left: 10px;
+    font-style: italic;
+    color: #666;
+}
+
+.generate-summary-container-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
