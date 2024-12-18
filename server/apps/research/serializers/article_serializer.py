@@ -5,6 +5,10 @@ from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
 from django.conf import settings
 
+def get_cloudinary_url(public_id):
+    if not public_id:
+        return None
+    return f"{settings.CLOUDINARY_DOMAIN}/{public_id}"
 
 class RelatedArticleSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True)
@@ -12,9 +16,7 @@ class RelatedArticleSerializer(serializers.ModelSerializer):
     thumb = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
-        if obj.thumb:
-            return f"https://res.cloudinary.com/dc2iz5j1c/{obj.thumb}"
-        return None
+        return get_cloudinary_url(obj.thumb)
 
     class Meta:
         model = Article
@@ -38,9 +40,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     thumb = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
-        if obj.thumb:
-            return f"https://res.cloudinary.com/dc2iz5j1c/{obj.thumb}"
-        return None
+        return get_cloudinary_url(obj.thumb)
 
     def get_related_articles(self, obj):
         related = obj.get_related_articles()
@@ -70,9 +70,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     thumb = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
-        if obj.thumb:
-            return f"{settings.CLOUDINARY_DOMAIN}/{obj.thumb}"
-        return None
+        return get_cloudinary_url(obj.thumb)
 
     def get_related_articles(self, obj):
         related = obj.get_related_articles()
@@ -192,4 +190,4 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
             return instance
         except Exception as e:
             logging.error(f"Error updating article: {str(e)}")
-            raise serializers.ValidationError("An error occurred while updating the article.")
+            raise serializers.ValidationError("Error updating article.") from e

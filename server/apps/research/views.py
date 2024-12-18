@@ -14,6 +14,8 @@ from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, Artic
 import cloudinary.uploader
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.core.exceptions import ValidationError
 
 
 # Set up logging
@@ -125,14 +127,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
         except ValueError:
             return False
 
-@csrf_exempt
+@require_http_methods(["POST"])
 def tinymce_upload_image(request):
     if request.method == "POST" and request.FILES:
         try:
             file = request.FILES['file']
+            if not file.content_type.startswith('image/'):
+                raise ValidationError("Only image files are allowed")
+            if file.size > 5 * 1024 * 1024:
+                raise ValidationError("File size too large")
             upload_data = cloudinary.uploader.upload(
                 file,
-                folder='article_content'
+                folder='article_content',
+                allowed_formats=['png', 'jpg', 'jpeg', 'gif'],
+                resource_type="image"
             )
             return JsonResponse({
                 'location': upload_data['secure_url']

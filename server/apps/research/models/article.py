@@ -145,16 +145,14 @@ class Article(BaseModel):
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
         
-        if self.thumb and not hasattr(self.thumb, 'public_id'):
-            super().save(*args, **kwargs)
-        elif self.thumb and hasattr(self.thumb, 'public_id'):
+        if self.thumb and hasattr(self.thumb, 'public_id'):
             try:
                 if not self.thumb.public_id:
                     raise ValidationError("Failed to upload image to Cloudinary")
             except Exception as e:
-                raise ValidationError(f"Image upload failed: {str(e)}")
-        else:
-            super().save(*args, **kwargs)
+                raise ValidationError(f"Image upload failed: {str(e)}") from e
+
+        super().save(*args, **kwargs)
 
     def generate_unique_slug(self):
         """Generate a unique slug for the article."""
