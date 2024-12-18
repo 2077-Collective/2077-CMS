@@ -118,9 +118,9 @@ class ArticleAdmin(admin.ModelAdmin):
 
     class Media:
         css = {
-            'all': ('/static/article_admin.css',)
+            'all': ('/article_admin.css',)
         }
-        js = ('/static/article_admin.js',)
+        js = ('/article_admin.js',)
 
     def display_authors(self, obj):
         """Return a comma-separated list of authors for the article."""
