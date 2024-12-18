@@ -15,7 +15,7 @@ from django.db import transaction
 from cloudinary.models import CloudinaryField
 
 def get_default_thumb():
-    return f"{settings.MEDIA_URL}images/2077-Collective.png"
+    return "v1734517759/v4_article_cover_slashing_hhf6tz"
 
 class Article(BaseModel):
     """Model for articles."""
@@ -121,7 +121,7 @@ class Article(BaseModel):
             self.slug = self.generate_unique_slug()
 
         """Override the save method to track slug changes."""
-        if self.pk:  # If this is an existing article
+        if self.pk:
             try:
                 old_instance = Article.objects.get(pk=self.pk)
                 # Generate new slug first
@@ -144,8 +144,17 @@ class Article(BaseModel):
         
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
-
-        super().save(*args, **kwargs)
+        
+        if self.thumb and not hasattr(self.thumb, 'public_id'):
+            super().save(*args, **kwargs)
+        elif self.thumb and hasattr(self.thumb, 'public_id'):
+            try:
+                if not self.thumb.public_id:
+                    raise ValidationError("Failed to upload image to Cloudinary")
+            except Exception as e:
+                raise ValidationError(f"Image upload failed: {str(e)}")
+        else:
+            super().save(*args, **kwargs)
 
     def generate_unique_slug(self):
         """Generate a unique slug for the article."""

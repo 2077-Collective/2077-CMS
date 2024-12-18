@@ -1,7 +1,9 @@
+import logging
 from rest_framework import serializers
 from ..models import Article, Author, Category
 from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
+from django.conf import settings
 
 
 class RelatedArticleSerializer(serializers.ModelSerializer):
@@ -69,7 +71,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def get_thumb(self, obj):
         if obj.thumb:
-            return f"https://res.cloudinary.com/dc2iz5j1c/{obj.thumb}"
+            return f"{settings.CLOUDINARY_DOMAIN}/{obj.thumb}"
         return None
 
     def get_related_articles(self, obj):
@@ -168,7 +170,8 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
 
             return article
         except Exception as e:
-            raise serializers.ValidationError(f"Error creating article: {str(e)}")
+            logging.error(f"Error creating article: {str(e)}")
+            raise serializers.ValidationError("An error occurred while creating the article.")
 
     def update(self, instance: Article, validated_data: dict) -> Article:
         """Update an existing article instance."""
@@ -188,4 +191,5 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
 
             return instance
         except Exception as e:
-            raise serializers.ValidationError(f"Error updating article: {str(e)}")
+            logging.error(f"Error updating article: {str(e)}")
+            raise serializers.ValidationError("An error occurred while updating the article.")

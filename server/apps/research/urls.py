@@ -5,7 +5,6 @@ from django.views.generic.base import RedirectView
 from rest_framework.routers import DefaultRouter
 from .views import ArticleViewSet
 from .redirects_urls import urlpatterns as redirects_urlpatterns
-from django.urls import path
 from .views import tinymce_upload_image
 
 router = DefaultRouter()

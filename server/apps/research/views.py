@@ -130,14 +130,17 @@ def tinymce_upload_image(request):
     if request.method == "POST" and request.FILES:
         try:
             file = request.FILES['file']
-            # Upload to a specific folder in Cloudinary
             upload_data = cloudinary.uploader.upload(
                 file,
-                folder='article_content'  # This will create an article_content folder in Cloudinary
+                folder='article_content'
             )
             return JsonResponse({
                 'location': upload_data['secure_url']
             })
         except Exception as e:
-            return JsonResponse({'error': str(e)})
-    return JsonResponse({'error': 'Invalid request'})
+            logger.error(f"Error uploading image: {str(e)}")
+            return JsonResponse(
+                {'error': 'An error occurred while uploading the image'}, 
+                status=500
+            )
+    return JsonResponse({'error': 'Invalid request'}, status=400)
