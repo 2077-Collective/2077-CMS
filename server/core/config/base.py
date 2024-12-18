@@ -224,3 +224,6 @@ SILENCED_SYSTEM_CHECKS = ["security.W019"]
 
 # Tinymce API Config
 TINYMCE_API_KEY = config('TINYMCE_API_KEY')
+
+# OpenAI API Config
+OPENAI_API_KEY = config('OPENAI_API_KEY', default=None)

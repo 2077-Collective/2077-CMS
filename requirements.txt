@@ -20,9 +20,12 @@ distro==1.9.0
 Django==5.0.8
 django-admin-interface==0.28.8
 django-celery-beat==2.6.0
+django-ckeditor==6.7.1
+django-ckeditor-5==0.2.13
 django-colorfield==0.11.0
 django-cors-headers==4.4.0
 django-filter==24.2
+django-jazzmin==3.0.0
 django-js-asset==2.2.0
 django-shortcuts==1.6
 django-sortedm2m==4.0.0
@@ -39,7 +42,7 @@ jiter==0.8.2
 jsonschema==4.23.0
 jsonschema-specifications==2023.12.1
 kombu==5.4.0
-openai==1.57.4
+openai==1.57.2
 pillow==10.4.0
 prompt_toolkit==3.0.47
 pycparser==2.22

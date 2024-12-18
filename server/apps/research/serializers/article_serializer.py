@@ -55,6 +55,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "table_of_contents",
+            "gpt_summary",
         ]
 
 
@@ -90,6 +91,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "min_read",
             "status",
             "views",
+            "gpt_summary",
             "created_at",
             "updated_at",
             "scheduled_publish_time",
@@ -123,6 +125,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
             "thumb",
             "content",
             "summary",
+            "gpt_summary",
             "acknowledgement",
             "status",
             "authors",
