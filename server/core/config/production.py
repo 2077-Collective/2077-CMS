@@ -41,7 +41,7 @@ CSP_STYLE_SRC = ("self",)
 
 CSP_SCRIPT_SRC = ("self", "blob:")
 
-CSP_IMG_SRC = ("self", "http://cms.2077.xyz", "https://cms.2077.xyz", "http://74.119.195.253", "blob:")
+CSP_IMG_SRC = ("self", "http://cms.2077.xyz", "https://cms.2077.xyz", "http://74.119.195.253", "http://23.153.72.61" "blob:")
 
 CSP_MEDIA_SRC = ("'self'", "blob:")
 
