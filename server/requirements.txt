@@ -15,7 +15,6 @@ blivet==3.10.0
 blivet-gui==2.6.0
 boto3==1.35.72
 botocore==1.35.72
-Brlapi==0.8.5
 Brotli==1.1.0
 bs4==0.0.2
 celery==5.4.0
@@ -50,7 +49,6 @@ django-storages==1.14.4
 django-timezone-field==7.0
 django-tinymce==4.1.0
 djangorestframework==3.15.2
-dnf==4.22.0
 drf-spectacular==0.27.2
 fedora-third-party==0.10
 file-magic==0.4.0
@@ -77,7 +75,6 @@ keyring==24.3.1
 kombu==5.4.0
 langtable==0.0.68
 libcomps==0.1.20
-libdnf==0.73.4
 louis==3.28.0
 lxml==5.1.0
 Mako==1.2.3
@@ -85,7 +82,6 @@ MarkupSafe==2.1.3
 more-itertools==10.1.0
 multidict==6.0.5
 mutagen==1.47.0
-nftables==0.1
 olefile==0.47
 openai==1.57.4
 packaging==23.2
@@ -141,12 +137,9 @@ requests==2.32.3
 requests-file==2.0.0
 requests-ftp==0.3.1
 rpds-py==0.19.1
-rpm==4.19.1.1
 s3transfer==0.10.4
 SecretStorage==3.3.3
-selinux @ file:///builddir/build/BUILD/libselinux-3.7/src
 sentry-sdk==2.17.0
-sepolicy @ file:///builddir/build/BUILD/selinux-3.7/python/sepolicy
 setools==4.5.1
 setuptools==69.0.3
 shtab==1.6.1
@@ -157,7 +150,6 @@ sniffio==1.3.1
 sos==4.7.2
 soupsieve==2.6
 sqlparse==0.5.1
-systemd-python==235
 Tempita==0.5.2
 text-unidecode==1.3
 torbrowser-launcher==0.3.7
