@@ -4,7 +4,7 @@ MEDIA_URL = 'https://cms.2077.xyz/media/'
 
 DEBUG = bool(config('DJANGO_DEBUG', default=False))
 
-ALLOWED_HOSTS = ['74.119.195.253', 'cms.2077.xyz']
+ALLOWED_HOSTS = ['74.119.195.253', '23.153.72.61' 'cms.2077.xyz']
 
 CSRF_TRUSTED_ORIGINS = []
 for host in ALLOWED_HOSTS:
@@ -16,6 +16,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://74.119.195.253", # Http version of Astro
     "http://127.0.0.1:4321", # Local Dev
     "http://localhost:4321", # Local Dev
+    "http://23.153.72.61",
     ]
 
 CORS_ALLOW_CREDENTIALS = True
