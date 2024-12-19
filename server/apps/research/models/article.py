@@ -33,7 +33,7 @@ class Article(BaseModel):
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
-    thumb = CloudinaryField('image', folder='coverImage', default=get_default_thumb, blank=True)
+    thumb = CloudinaryField('image', folder='images', default=get_default_thumb, blank=True)
     views = models.PositiveBigIntegerField(default=0)
     status = models.CharField(max_length=10, choices=options, default='draft', db_index=True)    
     scheduled_publish_time = models.DateTimeField(null=True, blank=True, db_index=True)    
