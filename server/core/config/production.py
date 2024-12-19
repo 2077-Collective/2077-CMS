@@ -1,7 +1,5 @@
 from .base import *
 
-MEDIA_URL = 'https://cms.2077.xyz/media/'
-
 DEBUG = bool(config('DJANGO_DEBUG', default=False))
 
 ALLOWED_HOSTS = ['74.119.195.253', 'cms.2077.xyz']

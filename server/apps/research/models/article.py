@@ -12,9 +12,10 @@ import json
 from bs4 import BeautifulSoup
 import uuid
 from django.db import transaction
+from cloudinary.models import CloudinaryField
 
 def get_default_thumb():
-    return f"{settings.MEDIA_URL}images/2077-Collective.png"
+    return "v1734517759/v4_article_cover_slashing_hhf6tz"
 
 class Article(BaseModel):
     """Model for articles."""
@@ -32,7 +33,7 @@ class Article(BaseModel):
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
-    thumb = models.ImageField(upload_to='images/', default=get_default_thumb, blank=True)
+    thumb = CloudinaryField('image', folder='coverImage', default=get_default_thumb, blank=True)
     views = models.PositiveBigIntegerField(default=0)
     status = models.CharField(max_length=10, choices=options, default='draft', db_index=True)    
     scheduled_publish_time = models.DateTimeField(null=True, blank=True, db_index=True)    
@@ -120,7 +121,7 @@ class Article(BaseModel):
             self.slug = self.generate_unique_slug()
 
         """Override the save method to track slug changes."""
-        if self.pk:  # If this is an existing article
+        if self.pk:
             try:
                 old_instance = Article.objects.get(pk=self.pk)
                 # Generate new slug first
@@ -143,6 +144,13 @@ class Article(BaseModel):
         
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
+        
+        if self.thumb and hasattr(self.thumb, 'public_id'):
+            try:
+                if not self.thumb.public_id:
+                    raise ValidationError("Failed to upload image to Cloudinary")
+            except Exception as e:
+                raise ValidationError(f"Image upload failed: {str(e)}") from e
 
         super().save(*args, **kwargs)
 

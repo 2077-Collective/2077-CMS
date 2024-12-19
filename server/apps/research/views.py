@@ -8,11 +8,18 @@ import logging
 from django.db import transaction
 from rest_framework import serializers
 from urllib.parse import quote
-
-
 from .models import Article, ArticleSlugHistory
 from .permissions import ArticleUserWritePermission
 from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer
+import cloudinary.uploader
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.core.exceptions import ValidationError
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import UserRateThrottle
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -122,3 +129,46 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return True
         except ValueError:
             return False
+
+class ImageUploadRateThrottle(UserRateThrottle):
+    rate = '60/hour'
+    
+@require_http_methods(["POST"])
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([ImageUploadRateThrottle])
+def tinymce_upload_image(request):
+    if request.method == "POST" and request.FILES:
+        try:
+            file = request.FILES['file']
+            # Enhanced file validation
+            allowed_types = {'image/jpeg', 'image/png', 'image/gif'}
+            if not file.content_type.startswith('image/'):
+                raise ValidationError("Only image files are allowed")
+            if file.content_type not in allowed_types:
+                raise ValidationError(f"Unsupported image type. Allowed types: {', '.join(allowed_types)}")
+            if file.size > 5 * 1024 * 1024:
+                raise ValidationError("File size too large")
+            
+            # Sanitize filename
+            import re
+            safe_filename = re.sub(r'[^a-zA-Z0-9._-]', '', file.name)
+            
+            upload_data = cloudinary.uploader.upload(
+                file,
+                folder='article_content',
+                allowed_formats=['png', 'jpg', 'jpeg', 'gif'],
+                resource_type="image",
+                filename_override=safe_filename,
+                unique_filename=True
+            )
+            return JsonResponse({
+                'location': upload_data['secure_url']
+            })
+        except Exception as e:
+            logger.error(f"Error uploading image: {str(e)}")
+            return JsonResponse(
+                {'error': 'An error occurred while uploading the image'}, 
+                status=500
+            )
+    return JsonResponse({'error': 'Invalid request'}, status=400)
