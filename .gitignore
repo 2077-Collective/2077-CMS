@@ -1,6 +1,9 @@
 dumps/
 .venv/
 .env
+.env.local
+.env.production
+.env.backup.*
 __pycache__/
 test.py
 test.json

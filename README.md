@@ -76,7 +76,129 @@ Before running the application, ensure you have the following:
     EMAIL_HOST_PASSWORD = 'enter password' #for Gmail, generate app password
    ```
 
-5. Run the application in development mode:
+5. Environment Switching: Use this script (switch-env.sh) to easily switch between environments:
+
+   Before using the script, create your environment files:
+   1. Copy `.env.example` to `.env.local` and `.env.production`
+   2. Update each file with appropriate values
+   3. Use the script to switch between environments
+
+   ```sh
+   #!/bin/bash
+
+   validate_env() {
+       if [[ ! "$1" =~ ^(local|production)$ ]]; then
+           echo "Error: Invalid environment. Please specify 'local' or 'production'."
+           exit 1
+       fi
+   }
+
+   check_file() {
+       if [[ ! -f "$1" ]]; then
+           echo "Error: $1 does not exist."
+           exit 1
+       fi
+   }
+
+   validate_env_file() {
+       local file="$1"
+       local required_vars=("DJANGO_SETTINGS_MODULE" "SECRET_KEY")
+
+       for var in "${required_vars[@]}"; do
+           if ! grep -q "^${var}=" "$file"; then
+               echo "Error: Missing required variable $var in $file"
+               exit 1
+           fi
+       done
+
+       if [[ "$1" == "production" ]] && ! grep -q "^DEBUG=" "$file"; then
+           echo "Warning: DEBUG is not set in .env.production. Defaulting to False."
+           echo "DEBUG=False" >> "$file"
+       fi
+   }
+
+   if [[ -z "$1" ]]; then
+       echo "Error: No environment specified. Please specify 'local' or 'production'."
+       exit 1
+   fi
+
+   validate_env "$1"
+
+   source_file=".env.$1"
+   check_file "$source_file"
+
+   validate_env_file "$source_file"
+
+   if [[ -f .env ]]; then
+       backup_file=".env.backup.$(date +%Y%m%d_%H%M%S)"
+       cp .env "$backup_file"
+       chmod 600 "$backup_file"  # Restrict to owner read/write only
+       echo "Existing .env backed up to $backup_file"
+   fi
+
+   cp "$source_file" .env
+
+   if [[ $? -eq 0 ]]; then
+       echo "Successfully switched to $1 environment."
+   else
+       echo "Error: Failed to switch environment."
+       exit 1
+   fi
+      ```
+
+   ### Usage
+   Make script executable:
+
+   ```sh
+      chmod +x switch-env.sh
+   ```
+
+   1. Set restrictive permissions for environment files:
+   ```sh
+      chmod 600 .env.local .env.production .env
+   ```
+   This ensures that only the file owner can read or modify these files, protecting sensitive information.
+
+   2. Switch to the desired environment:
+   ./switch-env.sh local  # Switch to local environment
+   ./switch-env.sh production   # Switch to production environment
+   ```
+
+   ### What the Script Does:
+      - Validates the Environment Name: Ensures only local or production environments are specified.
+
+      - Checks for Required Variables: Validates that the environment file (e.g., .env.production) contains all required variables (DJANGO_SETTINGS_MODULE, SECRET_KEY, and DEBUG).
+
+      - Backs Up the Existing .env File: If a .env file already exists, it is backed up with a timestamp.
+
+      - Switches the Environment: Copies the specified environment file to .env.
+
+   ### Example:
+      ```sh
+         ./switch-env.sh production
+      ```
+   ### Output:
+      - **If successful**:
+      ```sh
+         Existing .env backed up to .env.backup.20231025_123456
+         Successfully switched to production environment.
+      ```
+      - If a required variable is missing:
+      ```sh
+         Error: Missing required variable DEBUG in .env.production
+      ```
+
+   ### Required Variables:
+   Ensure your environment files (e.g., .env.local, .env.production) include the following variables:
+   ```sh
+      DJANGO_SETTINGS_MODULE=core.config.local  # or core.config.production for production
+      SECRET_KEY=your-secret-key-here
+      DEBUG=True  # or False for production
+   ```
+   For production, it is recommended to set DEBUG=False for security reasons.
+
+
+6. Run the application:
 
 - Start Server:
 
@@ -142,4 +264,4 @@ If you want to contribute to this project, please read the [contribution guide](
 - "Module not found" error: Check your dependencies and installation
 - "React-Scripts Dependencies error" : Install using `--legacy-peer-deps`
 
-Working in Progress...stay tuned
+Work in Progress...stay tuned

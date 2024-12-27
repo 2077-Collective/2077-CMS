@@ -12,8 +12,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from django.core.asgi import get_asgi_application
+# Ensure DJANGO_SETTINGS_MODULE is set
+if not os.getenv('DJANGO_SETTINGS_MODULE'):
+    raise ValueError('DJANGO_SETTINGS_MODULE environment variable is not set')
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.config.local')
+# Set the default Django settings module for the ASGI application.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', os.getenv('DJANGO_SETTINGS_MODULE'))
+
+from django.core.asgi import get_asgi_application
 
 application = get_asgi_application()
