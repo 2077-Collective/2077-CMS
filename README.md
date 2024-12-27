@@ -76,7 +76,29 @@ Before running the application, ensure you have the following:
     EMAIL_HOST_PASSWORD = 'enter password' #for Gmail, generate app password
    ```
 
-5. Run the application in development mode:
+5. Environment Switching: Use this script (switch-env.sh) to easily switch between environments:
+   ```sh
+   #!/bin/bash
+   if [ "$1" == "local" ]; then
+       cp .env.local .env
+       echo "Switched to local environment"
+   elif [ "$1" == "prod" ]; then
+       cp .env.production .env
+       echo "Switched to production environment"
+   else
+       echo "Please specify environment: local or prod"
+   fi
+   ```
+   Make it executable and use:
+
+   ```sh
+   chmod +x switch-env.sh
+   ./switch-env.sh local  # Switch to local environment
+   ./switch-env.sh prod   # Switch to production environment
+   ```
+
+
+6. Run the application:
 
 - Start Server:
 

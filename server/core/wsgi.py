@@ -14,6 +14,7 @@ load_dotenv()
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.config.local')
+settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', 'core.config.production')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
 
 application = get_wsgi_application()
