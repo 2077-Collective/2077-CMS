@@ -7,8 +7,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Ensure DJANGO_SETTINGS_MODULE is set
+if not os.getenv('DJANGO_SETTINGS_MODULE'):
+    raise ValueError('DJANGO_SETTINGS_MODULE environment variable is not set')
+
 # Set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', os.getenv('DJANGO_SETTINGS_MODULE', 'core.config.production'))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', os.getenv('DJANGO_SETTINGS_MODULE'))
 
 app = Celery('core')
 

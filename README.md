@@ -97,6 +97,39 @@ Before running the application, ensure you have the following:
    ./switch-env.sh prod   # Switch to production environment
    ```
 
+   ### What the Script Does:
+      - Validates the Environment Name: Ensures only local or production environments are specified.
+
+      - Checks for Required Variables: Validates that the environment file (e.g., .env.production) contains all required variables (DJANGO_SETTINGS_MODULE, SECRET_KEY, and DEBUG).
+
+      - Backs Up the Existing .env File: If a .env file already exists, it is backed up with a timestamp.
+
+      - Switches the Environment: Copies the specified environment file to .env.
+
+   ### Example:
+      ```sh
+         ./switch-env.sh production
+      ```
+   ### Output:
+      - **If successful**:
+      ```sh
+         Existing .env backed up to .env.backup.20231025_123456
+         Successfully switched to production environment.
+      ```
+      - If a required variable is missing:
+      ```sh
+         Error: Missing required variable DEBUG in .env.production
+      ```
+
+   ### Required Variables:
+   Ensure your environment files (e.g., .env.local, .env.production) include the following variables:
+   ```sh
+      DJANGO_SETTINGS_MODULE=core.config.local  # or core.config.production for production
+      SECRET_KEY=your-secret-key-here
+      DEBUG=True  # or False for production
+   ```
+   For production, it is recommended to set DEBUG=False for security reasons.
+
 
 6. Run the application:
 
@@ -164,4 +197,4 @@ If you want to contribute to this project, please read the [contribution guide](
 - "Module not found" error: Check your dependencies and installation
 - "React-Scripts Dependencies error" : Install using `--legacy-peer-deps`
 
-Working in Progress...stay tuned
+Work in Progress...stay tuned
