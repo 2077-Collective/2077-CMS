@@ -3,6 +3,7 @@ dumps/
 .env
 .env.local
 .env.production
+.env.backup.*
 __pycache__/
 test.py
 test.json
@@ -19,5 +20,3 @@ db.sqlite3
 old-backup-db.sqlite3
 dump.rdp
 client/
-
-switch-env.sh
