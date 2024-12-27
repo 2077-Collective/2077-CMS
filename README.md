@@ -77,6 +77,12 @@ Before running the application, ensure you have the following:
    ```
 
 5. Environment Switching: Use this script (switch-env.sh) to easily switch between environments:
+
+   Before using the script, create your environment files:
+   1. Copy `.env.example` to `.env.local` and `.env.production`
+   2. Update each file with appropriate values
+   3. Use the script to switch between environments
+
    ```sh
    #!/bin/bash
 
@@ -139,12 +145,23 @@ Before running the application, ensure you have the following:
        exit 1
    fi
       ```
-   Make it executable and use:
+
+   ### Usage
+   Make script executable:
 
    ```sh
-   chmod +x switch-env.sh
+      chmod +x switch-env.sh
+   ```
+
+   1. Set restrictive permissions for environment files:
+   ```sh
+      chmod 600 .env.local .env.production .env
+   ```
+   This ensures that only the file owner can read or modify these files, protecting sensitive information.
+
+   2. Switch to the desired environment:
    ./switch-env.sh local  # Switch to local environment
-   ./switch-env.sh prod   # Switch to production environment
+   ./switch-env.sh production   # Switch to production environment
    ```
 
    ### What the Script Does:
