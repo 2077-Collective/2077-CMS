@@ -53,6 +53,7 @@ validate_env_file "$source_file"
 if [[ -f .env ]]; then
     backup_file=".env.backup.$(date +%Y%m%d_%H%M%S)"
     cp .env "$backup_file"
+    chmod 600 "$backup_file"  # Restrict to owner read/write only
     echo "Existing .env backed up to $backup_file"
 fi
 

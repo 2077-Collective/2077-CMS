@@ -79,16 +79,66 @@ Before running the application, ensure you have the following:
 5. Environment Switching: Use this script (switch-env.sh) to easily switch between environments:
    ```sh
    #!/bin/bash
-   if [ "$1" == "local" ]; then
-       cp .env.local .env
-       echo "Switched to local environment"
-   elif [ "$1" == "prod" ]; then
-       cp .env.production .env
-       echo "Switched to production environment"
-   else
-       echo "Please specify environment: local or prod"
+
+   validate_env() {
+       if [[ ! "$1" =~ ^(local|production)$ ]]; then
+           echo "Error: Invalid environment. Please specify 'local' or 'production'."
+           exit 1
+       fi
+   }
+
+   check_file() {
+       if [[ ! -f "$1" ]]; then
+           echo "Error: $1 does not exist."
+           exit 1
+       fi
+   }
+
+   validate_env_file() {
+       local file="$1"
+       local required_vars=("DJANGO_SETTINGS_MODULE" "SECRET_KEY")
+
+       for var in "${required_vars[@]}"; do
+           if ! grep -q "^${var}=" "$file"; then
+               echo "Error: Missing required variable $var in $file"
+               exit 1
+           fi
+       done
+
+       if [[ "$1" == "production" ]] && ! grep -q "^DEBUG=" "$file"; then
+           echo "Warning: DEBUG is not set in .env.production. Defaulting to False."
+           echo "DEBUG=False" >> "$file"
+       fi
+   }
+
+   if [[ -z "$1" ]]; then
+       echo "Error: No environment specified. Please specify 'local' or 'production'."
+       exit 1
    fi
-   ```
+
+   validate_env "$1"
+
+   source_file=".env.$1"
+   check_file "$source_file"
+
+   validate_env_file "$source_file"
+
+   if [[ -f .env ]]; then
+       backup_file=".env.backup.$(date +%Y%m%d_%H%M%S)"
+       cp .env "$backup_file"
+       chmod 600 "$backup_file"  # Restrict to owner read/write only
+       echo "Existing .env backed up to $backup_file"
+   fi
+
+   cp "$source_file" .env
+
+   if [[ $? -eq 0 ]]; then
+       echo "Successfully switched to $1 environment."
+   else
+       echo "Error: Failed to switch environment."
+       exit 1
+   fi
+      ```
    Make it executable and use:
 
    ```sh
