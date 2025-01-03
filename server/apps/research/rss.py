@@ -1,5 +1,6 @@
 from django.contrib.syndication.views import Feed
 from .models import Article
+from django.conf import settings
 
 class LatestArticlesFeed(Feed):
     title = "Latest Research Articles"
@@ -15,8 +16,9 @@ class LatestArticlesFeed(Feed):
         return self.request.build_absolute_uri('/research/rss/')
 
     def items(self):
-        # Return all published articles, ordered by publish date
-        return Article.objects.filter(status='ready').order_by('-scheduled_publish_time')
+        # Return most recent published articles up to configured limit
+        limit = getattr(settings, 'RSS_FEED_LIMIT', 10)
+        return Article.objects.filter(status='ready').order_by('-scheduled_publish_time')[:limit]
 
     def item_title(self, item):
         # Return the article title
