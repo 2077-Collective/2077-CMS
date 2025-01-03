@@ -38,10 +38,22 @@ class LatestArticlesFeed(Feed):
 
     def item_author_name(self, item):
         # Return the author's name(s) as a comma-separated string
-        return ", ".join(
-            [author.full_name or author.user.get_full_name() or author.user.username for author in item.authors.all()]
+        try:
+            return ", ".join(
+                [author.full_name or author.user.get_full_name() or author.user.username 
+                for author in item.authors.all()]
         )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching authors for article {item.id}: {e}")
+            return "Unknown Author"
 
     def item_categories(self, item):
-        # Return the article's categories as a list
-        return [category.name for category in item.categories.all()]
+        try:
+            return [category.name for category in item.categories.all()]
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching categories for article {item.id}: {e}")
+            return []
