@@ -36,15 +36,10 @@ class RelatedArticleSerializer(serializers.ModelSerializer):
 class ArticleListSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True)
     authors = AuthorSerializer(many=True)
-    related_articles = serializers.SerializerMethodField()
     thumb = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
         return get_cloudinary_url(obj.thumb)
-
-    def get_related_articles(self, obj):
-        related = obj.get_related_articles()
-        return RelatedArticleSerializer(related, many=True, context=self.context).data
 
     class Meta:
         model = Article
@@ -58,6 +53,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
             "updated_at",
             "table_of_contents",
             "gpt_summary",
+            "related_articles",
         ]
 
 
