@@ -8,7 +8,6 @@ class GPTService:
     def __init__(self):
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "gpt-4o"
-        self.max_tokens = 500
 
     async def prompt(self, system: str, user: str) -> str:
         """
@@ -34,7 +33,6 @@ class GPTService:
                     {"role": "system", "content": system},
                     {"role": "user", "content": self.clear_message(user)}
                 ],
-                max_tokens=self.max_tokens
             )
             # Access the response content directly from the completion object
             return completion.choices[0].message.content
