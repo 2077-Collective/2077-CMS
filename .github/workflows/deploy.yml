@@ -26,12 +26,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           timeout: 30s
           script: |
-            if [ ! -f ~/deploy.sh ]; then
+            if [ ! -f /root/deploy.sh ]; then
               echo "Error: deploy.sh not found"
               exit 1
             fi
-            chmod +x ~/deploy.sh
-            sudo ~/deploy.sh || {
+            chmod +x /root/deploy.sh
+            sudo /root/deploy.sh || {
               echo "Deployment failed"
               exit 1
             }
