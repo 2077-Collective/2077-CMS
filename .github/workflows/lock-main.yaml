@@ -8,3 +8,10 @@ on:
 jobs:
   check_source_branch:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run checks
+        run: |
+          echo "This workflow runs for PRs to the main branch."
