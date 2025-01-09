@@ -9,7 +9,6 @@ jobs:
   deploy:
     environment:
       name: production
-      url: ${{ secrets.SITE_URL }}
     concurrency:
       group: production
       cancel-in-progress: false
@@ -17,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
