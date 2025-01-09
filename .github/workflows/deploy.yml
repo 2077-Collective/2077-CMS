@@ -1,0 +1,38 @@
+name: Deploy Research Website
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    environment:
+      name: production
+      url: ${{ secrets.SITE_URL }}
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          timeout: 30s
+          script: |
+            if [ ! -f ~/deploy.sh ]; then
+              echo "Error: deploy.sh not found"
+              exit 1
+            fi
+            chmod +x ~/deploy.sh
+            ~/deploy.sh || {
+              echo "Deployment failed"
+              exit 1
+            }
