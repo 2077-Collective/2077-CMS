@@ -21,17 +21,19 @@ class Command(BaseCommand):
             subscribers = Subscriber.objects.iterator()
 
             # Open the CSV file for writing
-            with open(csv_filename, mode='w', newline='') as csv_file:
+            with open(csv_filename, mode='w', newline='', encoding='utf-8') as csv_file:
                 fieldnames = ['email', 'is_active', 'subscribed_at']
-                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames, escapechar='\\', quoting=csv.QUOTE_ALL)
 
                 # Write the header row
                 writer.writeheader()
 
                 # Write each subscriber's data to the CSV file
                 for subscriber in subscribers:
+                    # Sanitize email to prevent CSV injection
+                    safe_email = subscriber.email.replace('\n', '').replace('\r', '') if subscriber.email else ''
                     writer.writerow({
-                        'email': subscriber.email or '',
+                        'email': safe_email,
                         'is_active': 'Yes' if subscriber.is_active else 'No',
                         'subscribed_at': timezone.localtime(subscriber.subscribed_at).isoformat() if subscriber.subscribed_at else ''
                     })
