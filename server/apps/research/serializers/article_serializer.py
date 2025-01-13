@@ -5,10 +5,23 @@ from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
 from django.conf import settings
 
-def get_cloudinary_url(public_id):
-    if not public_id:
+def get_cloudinary_url(resource):
+    """
+    Handles both legacy images and new optimized images.
+    Legacy images: Add optimization parameters
+    New images: Will already have optimization from CloudinaryField config
+    """
+    if not resource:
         return None
-    return f"{settings.CLOUDINARY_DOMAIN}/{public_id}"
+    
+    public_id = resource.public_id if hasattr(resource, 'public_id') else resource
+    image_id = public_id.split('/')[-1]
+    base_url = f"{settings.CLOUDINARY_DOMAIN}/coverImage/{image_id}"
+
+    if 'f_auto' in image_id or 'q_auto' in image_id:
+        return base_url
+    
+    return f"{settings.CLOUDINARY_DOMAIN}/f_auto,q_auto/coverImage/{image_id}"
 
 class RelatedArticleSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True)
