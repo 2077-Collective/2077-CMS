@@ -21,7 +21,7 @@ def get_cloudinary_url(resource):
     if 'f_auto' in image_id or 'q_auto' in image_id:
         return base_url
     
-    return f"{settings.CLOUDINARY_DOMAIN}/f_auto,q_auto/coverImage/{image_id}"
+    return f"{settings.CLOUDINARY_DOMAIN}/f_auto,q_auto,c_limit,w_1200/coverImage/{image_id}"
 
 class RelatedArticleSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True)
