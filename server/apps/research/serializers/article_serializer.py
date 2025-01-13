@@ -15,7 +15,13 @@ def get_cloudinary_url(resource):
         return None
     
     public_id = resource.public_id if hasattr(resource, 'public_id') else resource
-    image_id = public_id.split('/')[-1]
+    try:
+        image_id = public_id.split('/')[-1]
+        if not image_id:
+            raise ValueError("Invalid public_id format")
+    except (AttributeError, IndexError) as e:
+        logging.error(f"Error processing public_id {public_id}: {str(e)}")
+        return None
     base_url = f"{settings.CLOUDINARY_DOMAIN}/coverImage/{image_id}"
 
     if 'f_auto' in image_id or 'q_auto' in image_id:
