@@ -19,7 +19,7 @@ def send_newsletter_via_email():
                 
                 unsubscribe_link = format_html(
                     '{}/newsletter/unsubscribe/{}/',
-                    settings.SITE_URL,  # Ensure this is set in your settings, e.g., 'http://127.0.0.1:8000'
+                    settings.SITE_URL,
                     subscriber.email
                 )
                 
