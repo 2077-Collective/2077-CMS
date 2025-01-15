@@ -27,12 +27,24 @@ app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 app.conf.beat_schedule = {
     'publish-scheduled-articles-every-minute': {
         'task': 'apps.research.tasks.publish_scheduled_articles',
-        'schedule': crontab(minute='*/1'),  # Runs every minute
+        'schedule': crontab(minute='*/1'),
     },
     
     'send-scheduled-newsletter': {
         'task': 'apps.newsletter.tasks.send_newsletter_via_email',
-        'schedule': crontab(minute='*/1'),  # Runs every minute
+        'schedule': crontab(minute='*/1'),
+    },
+    
+    'sync-subscribers-to-beehiiv': {
+        'task': 'apps.newsletter.tasks.bulk_sync_subscribers_to_beehiiv',
+        'schedule': crontab(minute=0, hour='*/1'),
+        'options': {'queue': 'beehiiv'}
+    },
+    
+    'retry-failed-beehiiv-syncs': {
+        'task': 'apps.newsletter.tasks.retry_failed_beehiiv_syncs',
+        'schedule': crontab(minute=30, hour='*/6'),
+        'options': {'queue': 'beehiiv'}
     },
 }
 

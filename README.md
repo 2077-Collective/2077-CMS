@@ -74,6 +74,12 @@ Before running the application, ensure you have the following:
     EMAIL_HOST = 'smtp.gmail.com' # Example using Gmail
     EMAIL_HOST_USER = 'enter your email'
     EMAIL_HOST_PASSWORD = 'enter password' #for Gmail, generate app password
+
+    # Beehiiv Integration
+    BEEHIIV_ENABLED=True
+    BEEHIIV_API_KEY=your_beehiiv_api_key  # Get this from Beehiiv dashboard
+    BEEHIIV_PUBLICATION_ID=your_publication_id  # Get this from Beehiiv dashboard
+    BEEHIIV_SYNC_BATCH_SIZE=50
    ```
 
 5. Environment Switching: Use this script (switch-env.sh) to easily switch between environments:
@@ -207,7 +213,7 @@ Before running the application, ensure you have the following:
   python3 manage.py migrate  # To migrate the changes in Database
   python3 manage.py runserver # To run the API server
   redis-server # to start redis-server
-  celery -A core worker -l info # to run celery
+  celery -A core worker -Q default,beehiiv -l info # to run celery with beehiiv queue
   celery -A core beat -l info # to run celery beat
   ```
 
@@ -229,6 +235,7 @@ Before running the application, ensure you have the following:
    |  GET   | articles/<uuid:pk> | Retrieve an article |
    | PATCH  | articles/<uuid:pk> |  Update an article  |
    | DELETE | articles/<uuid:pk> |  Delete an article  |
+   |  POST  | newsletter/subscribe/ | Subscribe to newsletter |
 
 7. Client Testing: `http://localhost:4321`
 
