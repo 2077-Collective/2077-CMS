@@ -4,6 +4,10 @@ from django.conf import settings
 from .models import Newsletter, Subscriber
 from django.utils import timezone
 from django.utils.html import format_html
+import logging
+from .beehiiv import BeehiivClient
+
+logger = logging.getLogger(__name__)
 
 @shared_task
 def send_newsletter_via_email():
@@ -16,10 +20,9 @@ def send_newsletter_via_email():
 
         for subscriber in subscribers:
             try:
-                
                 unsubscribe_link = format_html(
                     '{}/newsletter/unsubscribe/{}/',
-                    settings.SITE_URL,  # Ensure this is set in your settings, e.g., 'http://127.0.0.1:8000'
+                    settings.SITE_URL,
                     subscriber.email
                 )
                 
@@ -34,7 +37,7 @@ def send_newsletter_via_email():
                 )               
                 
             except Exception as e:
-                print(f"Error sending email to {subscriber.email}: {e}")
+                logger.error(f"Error sending email to {subscriber.email}: {e}")
 
         # Mark newsletter as sent
         newsletter.is_sent = True
@@ -43,4 +46,52 @@ def send_newsletter_via_email():
 
     # Return a success message
     subscriber_count = Subscriber.objects.filter(is_active=True).count()
-    print(f'Newsletter sent to {subscriber_count} subscribers')
+    logger.info(f'Newsletter sent to {subscriber_count} subscribers')
+
+@shared_task(bind=True, max_retries=3)
+def sync_subscriber_to_beehiiv(self, subscriber_id):
+    try:
+        subscriber = Subscriber.objects.get(id=subscriber_id)
+        
+        if subscriber.synced_to_beehiiv:
+            return
+            
+        client = BeehiivClient()
+        response = client.create_subscriber(subscriber.email)
+        
+        subscriber.beehiiv_id = response.get('id')
+        subscriber.synced_to_beehiiv = True
+        subscriber.sync_error = None
+        subscriber.save()
+        
+        logger.info(f"Successfully synced subscriber {subscriber.email} to Beehiiv")
+        
+    except Exception as e:
+        logger.error(f"Failed to sync subscriber {subscriber_id} to Beehiiv: {str(e)}")
+        retry_countdown = 60 * (2 ** self.request.retries)  # Exponential backoff
+        raise self.retry(exc=e, countdown=retry_countdown)
+
+@shared_task
+def bulk_sync_subscribers_to_beehiiv():
+    unsynced = Subscriber.objects.filter(
+        is_active=True,
+        synced_to_beehiiv=False
+    )[:settings.BEEHIIV_SYNC_BATCH_SIZE]
+    
+    for subscriber in unsynced:
+        sync_subscriber_to_beehiiv.delay(subscriber.id)
+    
+    return len(unsynced)
+
+@shared_task
+def retry_failed_beehiiv_syncs():
+    failed_syncs = Subscriber.objects.filter(
+        is_active=True,
+        synced_to_beehiiv=False,
+        sync_error__isnull=False
+    )
+    
+    for subscriber in failed_syncs:
+        sync_subscriber_to_beehiiv.delay(subscriber.id)
+    
+    return len(failed_syncs)
