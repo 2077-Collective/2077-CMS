@@ -3,7 +3,6 @@ from django.http import JsonResponse
 from .models import Subscriber
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError, transaction
-from .tasks import sync_subscriber_to_beehiiv
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +18,6 @@ def subscribe(request):
             with transaction.atomic():
                 subscriber = Subscriber.objects.create(email=email, is_active=True)
                 logger.info(f"Triggering Beehiiv sync for subscriber: {subscriber.id}")
-                sync_subscriber_to_beehiiv.delay(subscriber.id)
             
             return JsonResponse({'message': 'Subscription successful'}, status=200)
         except IntegrityError:
