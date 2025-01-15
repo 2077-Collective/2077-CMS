@@ -68,7 +68,10 @@ def sync_subscriber_to_beehiiv(self, subscriber_id):
         
     except Exception as e:
         logger.error(f"Failed to sync subscriber {subscriber_id} to Beehiiv: {str(e)}")
-        retry_countdown = 60 * (2 ** self.request.retries)  # Exponential backoff
+        if 'subscriber' in locals():
+            subscriber.sync_error = str(e)
+            subscriber.save()
+        retry_countdown = 60 * (2 ** self.request.retries)
         raise self.retry(exc=e, countdown=retry_countdown)
 
 @shared_task
