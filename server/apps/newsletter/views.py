@@ -3,7 +3,6 @@ from django.http import JsonResponse
 from .models import Subscriber
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError, transaction
-from .tasks import sync_subscriber_to_beehiiv
 import logging
 
 logger = logging.getLogger(__name__)
