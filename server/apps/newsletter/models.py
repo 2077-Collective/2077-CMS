@@ -8,9 +8,6 @@ class Subscriber(BaseModel):
     email = models.EmailField(unique=True)    
     is_active = models.BooleanField(default=True)
     subscribed_at = models.DateTimeField(auto_now_add=True)
-    beehiiv_id = models.CharField(max_length=255, blank=True, null=True)
-    synced_to_beehiiv = models.BooleanField(default=False)
-    sync_error = models.TextField(blank=True, null=True)
     
     def __str__(self):
         return self.email
