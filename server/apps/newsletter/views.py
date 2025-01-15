@@ -18,7 +18,6 @@ def subscribe(request):
             with transaction.atomic():
                 subscriber = Subscriber.objects.create(email=email, is_active=True)
                 logger.info(f"Triggering Beehiiv sync for subscriber: {subscriber.id}")
-                sync_subscriber_to_beehiiv.delay(subscriber.id)
             
             return JsonResponse({'message': 'Subscription successful'}, status=200)
         except IntegrityError:
