@@ -52,10 +52,14 @@ def send_newsletter_via_email():
 def sync_subscriber_to_beehiiv(self, subscriber_id):
     try:
         subscriber = Subscriber.objects.get(id=subscriber_id)
-        
-        if subscriber.synced_to_beehiiv:
-            return
-            
+    except Subscriber.DoesNotExist:
+        logger.error(f"Subscriber with id {subscriber_id} does not exist.")
+        return
+
+    if subscriber.synced_to_beehiiv:
+        return
+
+    try:
         client = BeehiivClient()
         response = client.create_subscriber(subscriber.email)
         

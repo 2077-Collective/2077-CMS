@@ -44,7 +44,7 @@ class BeehiivClient:
         try:
             validate_email(email)
         except ValidationError:
-            raise ValueError(f"Invalid email format: {email}")
+            raise ValueError(f"Invalid email format: {email}") from e
 
     def create_subscriber(self, email: str) -> Dict[str, Any]:
         """
