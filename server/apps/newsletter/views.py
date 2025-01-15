@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Subscriber
 from django.views.decorators.csrf import csrf_exempt
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from .tasks import sync_subscriber_to_beehiiv
 import logging
 
@@ -16,11 +16,10 @@ def subscribe(request):
             return JsonResponse({'message': 'Email is required'}, status=400)
         
         try:
-            subscriber = Subscriber.objects.create(email=email, is_active=True)
-            
-            # Trigger Beehiiv sync
-            logger.info(f"Triggering Beehiiv sync for subscriber: {subscriber.id}")
-            sync_subscriber_to_beehiiv.delay(subscriber.id)
+            with transaction.atomic():
+                subscriber = Subscriber.objects.create(email=email, is_active=True)
+                logger.info(f"Triggering Beehiiv sync for subscriber: {subscriber.id}")
+                sync_subscriber_to_beehiiv.delay(subscriber.id)
             
             return JsonResponse({'message': 'Subscription successful'}, status=200)
         except IntegrityError:
