@@ -76,7 +76,7 @@ def sync_subscriber_to_beehiiv(self, subscriber_id):
             subscriber.sync_error = str(e)
             subscriber.save()
         retry_countdown = 60 * (2 ** self.request.retries)
-        raise self.retry(exc=e, countdown=retry_countdown)
+        raise self.retry(exc=e, countdown=retry_countdown) from e
 
 @shared_task
 def bulk_sync_subscribers_to_beehiiv():
