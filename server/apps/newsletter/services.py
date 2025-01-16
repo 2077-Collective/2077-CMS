@@ -67,8 +67,8 @@ class BeehiivService:
         endpoint = f"{self.base_url}/publications/{self.publication_id}/subscriptions/email:{email}"
         
         try:
-            response = requests.delete(endpoint, headers=self.headers)
+            response = requests.delete(endpoint, headers=self.headers, timeout=10)
             response.raise_for_status()
             return True
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to delete Beehiiv subscriber: {str(e)}")
+            raise Exception(f"Failed to delete Beehiiv subscriber: {str(e)}") from e

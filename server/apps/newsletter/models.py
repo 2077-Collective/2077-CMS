@@ -45,6 +45,9 @@ def delete_subscriber_from_beehiiv(sender, instance, **kwargs):
     try:
         beehiiv.delete_subscriber(instance.email)
     except Exception as e:
+        if 'not found' in str(e).lower():
+            logger.warning("Subscriber %s not found in Beehiiv, skipping deletion", instance.email)
+            return
         logger.error("Failed to delete subscriber %s from Beehiiv: %s", instance.email, str(e))
         raise  # Re-raise the exception to trigger retry
 
