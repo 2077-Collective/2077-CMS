@@ -25,6 +25,7 @@ from .mail import (SITE_URL, EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, D
 load_dotenv()
 from decouple import config
 from .cloudinary import CLOUDINARY_DOMAIN, CLOUDINARY_STORAGE
+from .beehiiv import BEEHIIV_CONFIG
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -207,3 +208,7 @@ TINYMCE_API_KEY = config('TINYMCE_API_KEY')
 
 # OpenAI API Config
 OPENAI_API_KEY = config('OPENAI_API_KEY', default=None)
+
+# Beehiiv Settings
+BEEHIIV_API_KEY = BEEHIIV_CONFIG['API_KEY']
+BEEHIIV_PUBLICATION_ID = BEEHIIV_CONFIG['PUBLICATION_ID']

@@ -16,6 +16,9 @@ urlpatterns = [
 
                   # TinyMCE URL
                   path('tinymce/', include('tinymce.urls')),
+                  
+                  # Django i18n URLs for language switching
+                  path('i18n/', include('django.conf.urls.i18n')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
