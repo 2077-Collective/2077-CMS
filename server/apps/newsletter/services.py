@@ -34,11 +34,14 @@ class BeehiivService:
         }
         
         try:
-            response = requests.post(endpoint, headers=self.headers, json=data)
+            response = requests.post(endpoint, headers=self.headers, json=data, timeout=10)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if 'id' not in data:
+                raise ValueError("Invalid response from Beehiiv API")
+            return data
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to create Beehiiv subscriber: {str(e)}")
+            raise Exception(f"Failed to create Beehiiv subscriber: {str(e)}") from e
     
     def update_subscriber_status(self, email: str, is_active: bool) -> Dict[str, Any]:
         """
