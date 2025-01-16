@@ -54,11 +54,14 @@ class BeehiivService:
         }
         
         try:
-            response = requests.patch(endpoint, headers=self.headers, json=data)
+            response = requests.patch(endpoint, headers=self.headers, json=data, timeout=10)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if 'id' not in data:
+                raise ValueError("Invalid response from Beehiiv API")
+            return data
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to update Beehiiv subscriber: {str(e)}")
+            raise Exception(f"Failed to update Beehiiv subscriber: {str(e)}") from e
     
     def delete_subscriber(self, email: str) -> bool:
         """
