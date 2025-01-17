@@ -72,4 +72,4 @@ def sync_to_beehiiv_task(self, email: str):
     except Exception as e:
         # Log the error and retry
         logger.error(f"Error syncing {email} to Beehiiv: {str(e)}")
-        raise self.retry(exc=e, countdown=60)  # Retry after 60 seconds
+        raise self.retry(exc=e, countdown=60) from e # Retry after 60 seconds
