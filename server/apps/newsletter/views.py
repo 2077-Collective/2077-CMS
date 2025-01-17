@@ -3,9 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
 from django.shortcuts import render
 from .models import Subscriber
-from .services import BeehiivService
 import logging
-from threading import Thread
 from .tasks import sync_to_beehiiv_task
 
 logger = logging.getLogger(__name__)
