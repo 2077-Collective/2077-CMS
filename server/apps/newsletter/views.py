@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.shortcuts import render
 from .models import Subscriber
 import logging
@@ -21,6 +23,12 @@ def subscribe(request):
             return JsonResponse({'message': 'Email is required'}, status=400)
         
         try:
+            # Validate email format
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({'message': 'Invalid email address'}, status=400)
+        
+        try:
             # Create a new subscriber
             subscriber, created = Subscriber.objects.get_or_create(email=email, defaults={'is_active': True})
             
@@ -36,11 +44,11 @@ def subscribe(request):
         except IntegrityError:
             # Handle database integrity errors
             logger.error(f"IntegrityError while subscribing {email}")
-            return JsonResponse({'message': 'An error occurred during subscription'}, status=500)
+            return JsonResponse({'message': 'Email already exists in the database'}, status=400)
         
         except Exception as e:
             # Log the error and return a generic error message
-            logger.error(f"Error during subscription: {str(e)}")
+            logger.error(f"Error during subscription for {email}: {str(e)}")
             return JsonResponse({'message': 'An error occurred during subscription'}, status=500)
     
     # If the request method is not POST, return a 405 Method Not Allowed response

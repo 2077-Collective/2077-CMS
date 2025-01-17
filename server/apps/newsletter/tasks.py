@@ -1,4 +1,5 @@
 from celery import shared_task
+from celery.exceptions import Retry
 from django.core.mail import EmailMessage, send_mail
 from django.conf import settings
 from django.utils import timezone
@@ -6,6 +7,7 @@ from django.utils.html import format_html
 from .models import Newsletter, Subscriber
 from .services import BeehiivService
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -51,17 +53,23 @@ def send_newsletter_via_email():
     subscriber_count = Subscriber.objects.filter(is_active=True).count()
     logger.info(f'Newsletter sent to {subscriber_count} subscribers')
 
-@shared_task
-def sync_to_beehiiv_task(email: str):
+@shared_task(bind=True, max_retries=3)
+def sync_to_beehiiv_task(self, email: str):
     """
     Sync a subscriber to Beehiiv.
     """
     beehiiv = BeehiivService()
     try:
-        beehiiv.create_subscriber(email, is_active=True)
+        # Add a delay to avoid hitting Beehiiv's rate limits
+        time.sleep(1)  # 1-second delay between requests
+
+        # Sync the subscriber to Beehiiv
+        response = beehiiv.create_subscriber(email, is_active=True)
+        logger.info(f"Beehiiv API response for {email}: {response}")
     except ValueError as e:
         # Handle Beehiiv "invalid" status
         logger.warning(f"Beehiiv sync warning for {email}: {str(e)}")
     except Exception as e:
-        # Log the error
+        # Log the error and retry
         logger.error(f"Error syncing {email} to Beehiiv: {str(e)}")
+        raise self.retry(exc=e, countdown=60)  # Retry after 60 seconds
