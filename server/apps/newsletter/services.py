@@ -21,7 +21,7 @@ class BeehiivService:
     
     def create_subscriber(self, email: str, is_active: bool = True) -> Dict[str, Any]:
         """
-        Create a new subscriber in Beehiiv
+        Create a new subscriber in Beehiiv.
         """
         endpoint = f"{self.base_url}/publications/{self.publication_id}/subscriptions"
         
@@ -37,8 +37,11 @@ class BeehiivService:
             response = requests.post(endpoint, headers=self.headers, json=data, timeout=10)
             response.raise_for_status()
             data = response.json()
-            if 'id' not in data:
-                raise ValueError("Invalid response from Beehiiv API")
+            
+            # Check for "invalid" status
+            if data.get('data', {}).get('status') == 'invalid':
+                raise ValueError("Beehiiv API returned an invalid status. The email may need verification.")
+            
             return data
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to create Beehiiv subscriber: {str(e)}") from e

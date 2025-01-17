@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
 from django.shortcuts import render
 from .models import Subscriber
+from .services import BeehiivService
 
 @csrf_exempt
 def subscribe(request):
@@ -18,12 +19,26 @@ def subscribe(request):
         
         try:
             # Create a new subscriber
-            Subscriber.objects.create(email=email, is_active=True)
+            subscriber = Subscriber.objects.create(email=email, is_active=True)
+            
+            # Sync with Beehiiv
+            beehiiv = BeehiivService()
+            beehiiv.create_subscriber(email, is_active=True)
+            
             return JsonResponse({'message': 'Subscription successful'}, status=200)
         
         except IntegrityError:
             # Handle case where email is already subscribed
             return JsonResponse({'message': 'Email already subscribed'}, status=400)
+        
+        except ValueError as e:
+            # Handle Beehiiv "invalid" status
+            return JsonResponse({'message': str(e)}, status=200)  # Return 200 with a warning message
+        
+        except Exception as e:
+            # Log the error and return a generic error message
+            logger.error(f"Error during subscription: {str(e)}")
+            return JsonResponse({'message': 'An error occurred during subscription'}, status=500)
     
     # If the request method is not POST, return a 405 Method Not Allowed response
     return JsonResponse({'message': 'Method not allowed'}, status=405)
