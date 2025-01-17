@@ -4,6 +4,10 @@ from django.db import IntegrityError
 from django.shortcuts import render
 from .models import Subscriber
 from .services import BeehiivService
+import logging
+from threading import Thread
+
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
 def subscribe(request):
@@ -19,21 +23,33 @@ def subscribe(request):
         
         try:
             # Create a new subscriber
-            subscriber = Subscriber.objects.create(email=email, is_active=True)
+            subscriber, created = Subscriber.objects.get_or_create(email=email, defaults={'is_active': True})
             
-            # Sync with Beehiiv
-            beehiiv = BeehiivService()
-            beehiiv.create_subscriber(email, is_active=True)
+            if not created:
+                # Handle case where email is already subscribed
+                return JsonResponse({'message': 'Email already subscribed'}, status=200)
+            
+            # Sync with Beehiiv in the background
+            def sync_to_beehiiv():
+                beehiiv = BeehiivService()
+                try:
+                    beehiiv.create_subscriber(email, is_active=True)
+                except ValueError as e:
+                    # Handle Beehiiv "invalid" status
+                    logger.warning(f"Beehiiv sync warning for {email}: {str(e)}")
+                except Exception as e:
+                    # Log the error
+                    logger.error(f"Error syncing {email} to Beehiiv: {str(e)}")
+            
+            # Run the sync in a background thread
+            Thread(target=sync_to_beehiiv).start()
             
             return JsonResponse({'message': 'Subscription successful'}, status=200)
         
         except IntegrityError:
-            # Handle case where email is already subscribed
-            return JsonResponse({'message': 'Email already subscribed'}, status=400)
-        
-        except ValueError as e:
-            # Handle Beehiiv "invalid" status
-            return JsonResponse({'message': str(e)}, status=200)  # Return 200 with a warning message
+            # Handle database integrity errors
+            logger.error(f"IntegrityError while subscribing {email}")
+            return JsonResponse({'message': 'An error occurred during subscription'}, status=500)
         
         except Exception as e:
             # Log the error and return a generic error message

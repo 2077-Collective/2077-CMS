@@ -29,7 +29,7 @@ class BeehiivService:
             "email": email,
             "reactivate_existing": True,
             "send_welcome_email": True,
-            "utm_source": "django_website",
+            "utm_source": "2077 Research",
             "status": "active" if is_active else "inactive"
         }
         
