@@ -8,9 +8,9 @@ import logging
 from django.db import transaction
 from rest_framework import serializers
 from urllib.parse import quote
-from .models import Article, ArticleSlugHistory
+from .models import Article, ArticleSlugHistory, Author
 from .permissions import ArticleUserWritePermission
-from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer
+from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer, AuthorSerializer  # Import AuthorSerializer
 import cloudinary.uploader
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -19,7 +19,6 @@ from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
-
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -129,6 +128,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return True
         except ValueError:
             return False
+
+class AuthorViewSet(viewsets.ModelViewSet):
+    """API endpoint for authors."""
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+    permission_classes = [ArticleUserWritePermission]
+
+    @action(detail=True, methods=['get'])
+    def articles(self, request, pk=None):
+        """Retrieve articles written by a specific author."""
+        author = self.get_object()
+        articles = Article.objects.filter(author=author).select_related('author').prefetch_related('categories')
+        serializer = ArticleSerializer(articles, many=True)
+        return Response(serializer.data)
 
 class ImageUploadRateThrottle(UserRateThrottle):
     rate = '60/hour'
