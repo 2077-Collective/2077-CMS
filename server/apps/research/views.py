@@ -133,6 +133,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
     """API endpoint for authors."""
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
+    permission_classes = [ArticleUserWritePermission]
 
     @action(detail=True, methods=['get'])
     def articles(self, request, pk=None):
