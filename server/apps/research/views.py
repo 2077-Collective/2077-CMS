@@ -138,7 +138,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
     def articles(self, request, pk=None):
         """Retrieve articles written by a specific author."""
         author = self.get_object()
-        articles = Article.objects.filter(author=author)
+        articles = Article.objects.filter(author=author).select_related('author').prefetch_related('categories')
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
 

@@ -14,7 +14,7 @@ urlpatterns = [
 
     # New redirects for Substack articles
     path('p/eip-7503-zero-knowledge-wormholes/',
-         RedirectView.as_view(url='/eip-7503-zero-knowledge-wormholes-for-private-ethereum-transactions#introduction', permanent=True)),
+         RedirectView.as_view(url='/eip-7503-zero-knowledge-wormholes-for-private-ethereum-transactions', permanent=True)),
     path('p/eip-6110-supply-validator-deposits-onchain/',
          RedirectView.as_view(url='/eip-6110-fixing-beacon-chain-tech-debt', permanent=True)),
     path('p/eip-7251-increase-max-effective-balance/',
