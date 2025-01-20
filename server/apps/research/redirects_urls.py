@@ -41,6 +41,8 @@ urlpatterns = [
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
     path('p/weekly-stablecoin-report-4/',
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
+    path('p/announcing-ethereum-2077-newsletter/',
+         LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
 
     path('s/stablecoin-reports/',
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
@@ -50,6 +52,6 @@ urlpatterns = [
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
     path('archive/',
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
-    path('p/announcing-ethereum-2077-newsletter/',
+    path('t/eip-research',
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
 ]
