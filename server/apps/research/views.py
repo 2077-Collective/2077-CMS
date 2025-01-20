@@ -1,16 +1,17 @@
+import logging
+from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
 from django.db.models import F
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 import uuid
-import logging
 from django.db import transaction
 from rest_framework import serializers
 from urllib.parse import quote
 from .models import Article, ArticleSlugHistory, Author
 from .permissions import ArticleUserWritePermission
-from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer, AuthorSerializer  # Import AuthorSerializer
+from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer, AuthorSerializer
 import cloudinary.uploader
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -22,6 +23,18 @@ from rest_framework.throttling import UserRateThrottle
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+class LoggingRedirectView(RedirectView):
+    """
+    Custom RedirectView that logs incoming requests before performing the redirect.
+    """
+    def get(self, request, *args, **kwargs):
+        logger.info(
+            f"Redirect request: path={request.path} "
+            f"target={self.url} "
+            f"user_agent={request.META.get('HTTP_USER_AGENT', 'N/A')}"
+        )
+        return super().get(request, *args, **kwargs)
 
 class ArticleViewSet(viewsets.ModelViewSet):
     """API endpoint for articles."""
