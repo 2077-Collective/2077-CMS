@@ -3,17 +3,17 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 from rest_framework.routers import DefaultRouter
-from .views import ArticleViewSet, AuthorViewSet, tinymce_upload_image  # Import AuthorViewSet
+from .views import ArticleViewSet, AuthorViewSet, tinymce_upload_image
 from .redirects_urls import urlpatterns as redirects_urlpatterns
 from .rss import LatestArticlesFeed
 
 # Initialize the DefaultRouter
 router = DefaultRouter()
 router.register(r'articles', ArticleViewSet, basename='article')
-router.register(r'authors', AuthorViewSet, basename='author')  # Register AuthorViewSet
+router.register(r'authors', AuthorViewSet, basename='author')
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/admin/', permanent=False)),  # Redirect root to admin
+    path('', RedirectView.as_view(url='/admin/', permanent=False)),
 
     # Custom redirect URL old slug to new slug
     *redirects_urlpatterns,
