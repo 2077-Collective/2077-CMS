@@ -33,4 +33,12 @@ urlpatterns = [
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/eip-7657-securing-ethereums-sync-committee', permanent=True)),
     path('p/understanding-blockchain-governance/',
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/understanding-blockchain-governance', permanent=True)),
+
+    # Redirects for URLs no longer on the website to the homepage
+    path('p/monthly-stablecoin-report-1/',
+         LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
+    path('p/weekly-stablecoin-report-5/',
+         LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
+    path('p/weekly-stablecoin-report-4/',
+         LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
 ]
