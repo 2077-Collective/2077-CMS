@@ -52,6 +52,6 @@ urlpatterns = [
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
     path('archive/',
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
-    path('t/eip-research',
+    path('t/eip-research/',
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/', permanent=True)),
 ]
