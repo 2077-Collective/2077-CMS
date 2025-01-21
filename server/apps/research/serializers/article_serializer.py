@@ -167,6 +167,15 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                 "You can select up to 3 related articles only."
             )
         return value
+    
+    def validate(self, data):
+        primary_category = data.get('primary_category')
+        categories = data.get('categories', [])
+        if primary_category and primary_category not in categories:
+            raise serializers.ValidationError({
+                'primary_category': 'Primary category must be one of the selected categories.'
+            })
+        return data
 
     def create(self, validated_data: dict) -> Article:
         """Create a new article instance."""
