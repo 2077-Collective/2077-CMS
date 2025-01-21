@@ -63,6 +63,10 @@ class Article(BaseModel):
         if self.related_articles.count() > 3:
             raise ValidationError({'related_articles': 'You can select up to 3 related articles only.'})
 
+        # Validate that primary_category is one of the selected categories
+        if self.primary_category and not self.categories.filter(id=self.primary_category.id).exists():
+            raise ValidationError({'primary_category': 'Primary category must be one of the selected categories.'})
+
     def calculate_min_read(self):
         word_count = len(self.content.split())
         words_per_minute = 300  # Average reading speed (words per minute)
@@ -119,8 +123,10 @@ class Article(BaseModel):
     def save(self, *args, **kwargs):
         """Override the save method to generate a unique slug, build table of contents, and set primary category."""
 
-        # Set primary_category if not already set
-        if not self.primary_category and self.categories.exists():
+        # Validate and set primary_category
+        if self.primary_category and not self.categories.filter(id=self.primary_category.id).exists():
+            raise ValidationError("Primary category must be one of the selected categories")
+        elif not self.primary_category and self.categories.exists():
             self.primary_category = self.categories.first()
 
         if not self.slug or self.title_update():

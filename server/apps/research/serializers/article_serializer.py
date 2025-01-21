@@ -5,6 +5,7 @@ from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
 from django.conf import settings
 
+
 def get_cloudinary_url(resource):
     """
     Handles both legacy images and new optimized images.
@@ -13,10 +14,10 @@ def get_cloudinary_url(resource):
     """
     if not resource:
         return None
-    
-    public_id = resource.public_id if hasattr(resource, 'public_id') else resource
+
+    public_id = resource.public_id if hasattr(resource, "public_id") else resource
     try:
-        image_id = public_id.split('/')[-1]
+        image_id = public_id.split("/")[-1]
         if not image_id:
             raise ValueError("Invalid public_id format")
     except (AttributeError, IndexError) as e:
@@ -24,10 +25,11 @@ def get_cloudinary_url(resource):
         return None
     base_url = f"{settings.CLOUDINARY_DOMAIN}/coverImage/{image_id}"
 
-    if 'f_auto' in image_id or 'q_auto' in image_id:
+    if "f_auto" in image_id or "q_auto" in image_id:
         return base_url
-    
+
     return f"{settings.CLOUDINARY_DOMAIN}/f_auto,q_auto,c_scale,h_810/coverImage/{image_id}"
+
 
 class RelatedArticleSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True)
@@ -55,7 +57,7 @@ class RelatedArticleSerializer(serializers.ModelSerializer):
 class ArticleListSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True)
     authors = AuthorSerializer(many=True)
-    primary_category = serializers.SlugRelatedField(slug_field='slug', read_only=True)
+    primary_category = serializers.SlugRelatedField(slug_field="slug", read_only=True)
     thumb = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
@@ -81,7 +83,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
 class ArticleSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True, read_only=True)
     categories = CategorySerializer(many=True)
-    primary_category = serializers.SlugRelatedField(slug_field='slug', read_only=True)
+    primary_category = serializers.SlugRelatedField(slug_field="slug", read_only=True)
     views = serializers.ReadOnlyField()
     min_read = serializers.ReadOnlyField()
     related_articles = serializers.SerializerMethodField()
@@ -131,6 +133,9 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
     categories = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), many=True, required=False
     )
+    primary_category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), required=False, allow_null=True
+    )
     related_articles = serializers.PrimaryKeyRelatedField(
         queryset=Article.objects.filter(status="ready"), many=True, required=False
     )
@@ -141,6 +146,7 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
             "title",
             "slug",
             "categories",
+            "primary_category",
             "thumb",
             "content",
             "summary",
@@ -188,7 +194,9 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
             return article
         except Exception as e:
             logging.error(f"Error creating article: {str(e)}")
-            raise serializers.ValidationError("An error occurred while creating the article.") from e
+            raise serializers.ValidationError(
+                "An error occurred while creating the article."
+            ) from e
 
     def update(self, instance: Article, validated_data: dict) -> Article:
         """Update an existing article instance."""
