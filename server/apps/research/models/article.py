@@ -32,6 +32,7 @@ class Article(BaseModel):
     acknowledgement = HTMLField(blank=True, null=True)
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
+    primary_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_articles')
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     thumb = CloudinaryField('image', folder='coverImage', default=get_default_thumb, blank=True)
     views = models.PositiveBigIntegerField(default=0)
@@ -61,6 +62,11 @@ class Article(BaseModel):
         # Ensure no more than 3 related articles are selected
         if self.related_articles.count() > 3:
             raise ValidationError({'related_articles': 'You can select up to 3 related articles only.'})
+
+        # Validate that primary_category is one of the selected categories
+        with transaction.atomic():
+            if self.primary_category and not self.categories.filter(id=self.primary_category.id).exists():
+                raise ValidationError({'primary_category': 'Primary category must be one of the selected categories.'})
 
     def calculate_min_read(self):
         word_count = len(self.content.split())
@@ -116,21 +122,23 @@ class Article(BaseModel):
         ).distinct().order_by('-scheduled_publish_time')[:3]
 
     def save(self, *args, **kwargs):
-        """Override the save method to generate a unique slug and build table of contents."""
+        """Override the save method to generate a unique slug, build table of contents, and set primary category."""
+
+        # Set default primary_category if none is set
+        if not self.primary_category and self.categories.exists():
+            self.primary_category = self.categories.first()
+
         if not self.slug or self.title_update():
             self.slug = self.generate_unique_slug()
 
-        """Override the save method to track slug changes."""
+        # Track slug changes and create slug history if necessary
         if self.pk:
             try:
                 old_instance = Article.objects.get(pk=self.pk)
-                # Generate new slug first
                 if not self.slug or self.title_update():
                     self.slug = self.generate_unique_slug()
-                
-                # Then check if we need to create slug history
+
                 if old_instance.slug and old_instance.slug != self.slug:
-                    # Only create history if the slug actually changed and isn't empty
                     with transaction.atomic():
                         ArticleSlugHistory.objects.create(
                             article=self,
@@ -138,13 +146,14 @@ class Article(BaseModel):
                         )
             except Article.DoesNotExist:
                 pass  
-       
+
+        # Build table of contents if content exists
         if self.content:
             self.build_table_of_contents()
-        
+
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
-        
+
         if self.thumb and hasattr(self.thumb, 'public_id'):
             try:
                 if not self.thumb.public_id:
@@ -166,7 +175,7 @@ class Article(BaseModel):
     
     def title_update(self):
         """Check if the title has changed."""
-        if self.pk:  # Only check if the article exists
+        if self.pk:
             original = Article.objects.filter(pk=self.pk).only('title').first()
             if original:
                 return original.title != self.title

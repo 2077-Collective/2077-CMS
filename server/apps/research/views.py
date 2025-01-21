@@ -20,6 +20,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
+from apps.research.models import Category
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -141,6 +142,63 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return True
         except ValueError:
             return False
+        
+    # Custom action to retrieve articles by primary category
+    @action(detail=False, methods=['get'], url_path=r'primary-category/(?P<category_slug>[-\w]+)')
+    def retrieve_by_primary_category(self, request, category_slug=None):
+        """Retrieve articles by their primary category."""
+        try:
+            # Filter articles by primary_category's slug and status='ready'
+            instances = Article.objects.filter(primary_category__slug=category_slug, status='ready')
+            if not instances.exists():
+                return Response({'error': 'No articles found for this primary category'}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Serialize the articles
+            serializer = self.get_serializer(instances, many=True)
+            return Response({'success': True, 'data': serializer.data})
+        except Exception as e:
+            logger.error(f"Error retrieving articles by primary category: {e}")
+            return Response({'error': 'An error occurred while fetching articles'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    @action(detail=False, methods=['get'])
+    def all_categories(self, request):
+        """
+        Retrieve all unique categories from the Article model.
+        """
+        try:
+            # Fetch all unique categories associated with articles
+            categories = Category.objects.filter(articles__isnull=False).values_list('name', flat=True).distinct()
+
+            return Response({
+                'success': True,
+                'data': list(categories)  # Convert QuerySet to a list
+            })
+        except Exception as e:
+            logger.error(f"Error retrieving all categories: {str(e)}", exc_info=True)
+            return Response({
+                'success': False,
+                'error': 'An error occurred while fetching categories'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def all_primary_categories(self, request):
+        """
+        Retrieve all unique primary categories from the Article model.
+        """
+        try:
+            # Fetch all unique primary categories, excluding null values
+            primary_categories = Article.objects.exclude(primary_category__isnull=True).values_list('primary_category__name', flat=True).distinct()
+            
+            return Response({
+                'success': True,
+                'data': list(primary_categories)  # Convert QuerySet to a list
+            })
+        except Exception as e:
+            logger.error(f"Error retrieving all primary categories: {str(e)}", exc_info=True)
+            return Response({
+                'success': False,
+                'error': 'An error occurred while fetching primary categories'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AuthorViewSet(viewsets.ModelViewSet):
     """API endpoint for authors."""
