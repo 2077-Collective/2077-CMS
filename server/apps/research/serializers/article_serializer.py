@@ -4,6 +4,7 @@ from ..models import Article, Author, Category
 from .author_serializer import AuthorSerializer
 from .category_serializer import CategorySerializer
 from django.conf import settings
+from django.db import transaction
 
 
 def get_cloudinary_url(resource):
@@ -55,9 +56,9 @@ class RelatedArticleSerializer(serializers.ModelSerializer):
 
 
 class ArticleListSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True)
+    categories = CategorySerializer(many=True, read_only=True)
     authors = AuthorSerializer(many=True)
-    primary_category = serializers.SlugRelatedField(slug_field="slug", read_only=True)
+    primary_category = CategorySerializer(read_only=True, allow_null=True)
     thumb = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
@@ -65,25 +66,26 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        exclude = [
-            "content",
-            "scheduled_publish_time",
-            "acknowledgement",
-            "status",
-            "views",
+        fields = [
+            "id",
+            "slug",
+            "title",
+            "authors",
+            "thumb",
+            "categories",
+            "primary_category",
+            "summary",  # Include summary
+            "min_read",
             "created_at",
-            "updated_at",
-            "table_of_contents",
-            "gpt_summary",
-            "related_articles",
-            "summary",
         ]
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True, read_only=True)
     categories = CategorySerializer(many=True)
-    primary_category = serializers.SlugRelatedField(slug_field="slug", read_only=True)
+    primary_category = serializers.SlugRelatedField(
+        slug_field="slug", read_only=True, allow_null=True
+    )
     views = serializers.ReadOnlyField()
     min_read = serializers.ReadOnlyField()
     related_articles = serializers.SerializerMethodField()
@@ -167,15 +169,27 @@ class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
                 "You can select up to 3 related articles only."
             )
         return value
-    
+
     def validate(self, data):
-        primary_category = data.get('primary_category')
-        categories = data.get('categories', [])
-        if primary_category and primary_category not in categories:
-            raise serializers.ValidationError({
-                'primary_category': 'Primary category must be one of the selected categories.'
-            })
-        return data
+        with transaction.atomic():
+            primary_category = data.get("primary_category")
+            categories = data.get("categories", [])
+            if primary_category and primary_category not in categories:
+                raise serializers.ValidationError(
+                    {"primary_category": "Primary category must be one of the selected categories."}
+                )
+            return data
+
+    def to_internal_value(self, data):
+        # Handle case where primary_category is sent as a string (ID)
+        if isinstance(data.get("primary_category"), str):
+            try:
+                data["primary_category"] = int(data["primary_category"])
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    {"primary_category": "Invalid category ID. Must be a number."}
+                )
+        return super().to_internal_value(data)
 
     def create(self, validated_data: dict) -> Article:
         """Create a new article instance."""
