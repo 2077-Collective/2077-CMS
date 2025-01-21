@@ -32,6 +32,7 @@ class Article(BaseModel):
     acknowledgement = HTMLField(blank=True, null=True)
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
+    primary_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_articles')
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     thumb = CloudinaryField('image', folder='coverImage', default=get_default_thumb, blank=True)
     views = models.PositiveBigIntegerField(default=0)
@@ -115,42 +116,53 @@ class Article(BaseModel):
             id=self.id
         ).distinct().order_by('-scheduled_publish_time')[:3]
 
-    def save(self, *args, **kwargs):
-        """Override the save method to generate a unique slug and build table of contents."""
+    def _ensure_primary_category(self):
+        """Ensure primary category is set if categories exist."""
+        if not self.primary_category and self.categories.exists():
+            self.primary_category = self.categories.first()
+
+    def _handle_slug(self):
+        """Handle slug generation and history."""
         if not self.slug or self.title_update():
             self.slug = self.generate_unique_slug()
-
-        """Override the save method to track slug changes."""
         if self.pk:
             try:
                 old_instance = Article.objects.get(pk=self.pk)
-                # Generate new slug first
-                if not self.slug or self.title_update():
-                    self.slug = self.generate_unique_slug()
-                
-                # Then check if we need to create slug history
                 if old_instance.slug and old_instance.slug != self.slug:
-                    # Only create history if the slug actually changed and isn't empty
                     with transaction.atomic():
                         ArticleSlugHistory.objects.create(
                             article=self,
                             old_slug=old_instance.slug
                         )
             except Article.DoesNotExist:
-                pass  
-       
+                pass
+
+    def _build_table_of_contents(self):
+        """Build the table of contents if content exists."""
         if self.content:
             self.build_table_of_contents()
-        
+
+    def _handle_scheduled_publish(self):
+        """Handle scheduled publish logic."""
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
-        
+
+    def _validate_thumbnail(self):
+        """Validate the thumbnail."""
         if self.thumb and hasattr(self.thumb, 'public_id'):
             try:
                 if not self.thumb.public_id:
                     raise ValidationError("Failed to upload image to Cloudinary")
             except Exception as e:
                 raise ValidationError(f"Image upload failed: {str(e)}") from e
+
+    def save(self, *args, **kwargs):
+        """Override the save method to generate a unique slug, build table of contents, and set primary category."""
+        self._ensure_primary_category()
+        self._handle_slug()
+        self._build_table_of_contents()
+        self._handle_scheduled_publish()
+        self._validate_thumbnail()
 
         super().save(*args, **kwargs)
 
@@ -166,7 +178,7 @@ class Article(BaseModel):
     
     def title_update(self):
         """Check if the title has changed."""
-        if self.pk:  # Only check if the article exists
+        if self.pk:
             original = Article.objects.filter(pk=self.pk).only('title').first()
             if original:
                 return original.title != self.title
