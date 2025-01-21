@@ -116,23 +116,18 @@ class Article(BaseModel):
             id=self.id
         ).distinct().order_by('-scheduled_publish_time')[:3]
 
-    def save(self, *args, **kwargs):
-        """Override the save method to generate a unique slug, build table of contents, and set primary category."""
-
-        # Set primary_category if not already set
+    def _ensure_primary_category(self):
+        """Ensure primary category is set if categories exist."""
         if not self.primary_category and self.categories.exists():
             self.primary_category = self.categories.first()
 
+    def _handle_slug(self):
+        """Handle slug generation and history."""
         if not self.slug or self.title_update():
             self.slug = self.generate_unique_slug()
-
-        # Track slug changes and create slug history if necessary
         if self.pk:
             try:
                 old_instance = Article.objects.get(pk=self.pk)
-                if not self.slug or self.title_update():
-                    self.slug = self.generate_unique_slug()
-
                 if old_instance.slug and old_instance.slug != self.slug:
                     with transaction.atomic():
                         ArticleSlugHistory.objects.create(
@@ -140,21 +135,34 @@ class Article(BaseModel):
                             old_slug=old_instance.slug
                         )
             except Article.DoesNotExist:
-                pass  
+                pass
 
-        # Build table of contents if content exists
+    def _build_table_of_contents(self):
+        """Build the table of contents if content exists."""
         if self.content:
             self.build_table_of_contents()
 
+    def _handle_scheduled_publish(self):
+        """Handle scheduled publish logic."""
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
 
+    def _validate_thumbnail(self):
+        """Validate the thumbnail."""
         if self.thumb and hasattr(self.thumb, 'public_id'):
             try:
                 if not self.thumb.public_id:
                     raise ValidationError("Failed to upload image to Cloudinary")
             except Exception as e:
                 raise ValidationError(f"Image upload failed: {str(e)}") from e
+
+    def save(self, *args, **kwargs):
+        """Override the save method to generate a unique slug, build table of contents, and set primary category."""
+        self._ensure_primary_category()
+        self._handle_slug()
+        self._build_table_of_contents()
+        self._handle_scheduled_publish()
+        self._validate_thumbnail()
 
         super().save(*args, **kwargs)
 

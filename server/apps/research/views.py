@@ -1,7 +1,7 @@
 import logging
 from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
-from django.db.models import F
+from django.db.models import F, Count, Q
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -9,7 +9,7 @@ import uuid
 from django.db import transaction
 from rest_framework import serializers
 from urllib.parse import quote
-from .models import Article, ArticleSlugHistory, Author
+from .models import Article, ArticleSlugHistory, Author, Category
 from .permissions import ArticleUserWritePermission
 from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer, AuthorSerializer
 import cloudinary.uploader
@@ -20,7 +20,8 @@ from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
-from apps.research.models import Category
+from django.core.cache import cache
+from rest_framework.pagination import PageNumberPagination
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class LoggingRedirectView(RedirectView):
 class ArticleViewSet(viewsets.ModelViewSet):
     """API endpoint for articles."""
     permission_classes = [ArticleUserWritePermission]
+    pagination_class = PageNumberPagination  # Add pagination class
     
     def get_serializer_class(self):
         """Return appropriate serializer class based on request method."""
@@ -87,7 +89,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     # Custom action to retrieve articles by slug or UUID
     @action(detail=False, methods=['get'], url_path=r'(?P<identifier>[-\w0-9a-fA-F]+)')
     def retrieve_by_identifier(self, request, identifier=None):
-        """Retrieve an article by slug or UUID,  handling old slugs."""
+        """Retrieve an article by slug or UUID, handling old slugs."""
         try:
             with transaction.atomic():
                 if self.is_valid_uuid(identifier):
@@ -148,57 +150,74 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def retrieve_by_primary_category(self, request, category_slug=None):
         """Retrieve articles by their primary category."""
         try:
+            # Verify category exists first
+            category = get_object_or_404(Category, slug=category_slug)
+            
             # Filter articles by primary_category's slug and status='ready'
             instances = Article.objects.filter(primary_category__slug=category_slug, status='ready')
-            if not instances.exists():
-                return Response({'error': 'No articles found for this primary category'}, status=status.HTTP_404_NOT_FOUND)
             
-            # Serialize the articles
+            # Paginate the queryset
+            page = self.paginate_queryset(instances)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            # Fallback if pagination is not applied
             serializer = self.get_serializer(instances, many=True)
             return Response({'success': True, 'data': serializer.data})
+        
+        except Category.DoesNotExist:
+            return Response(
+                {'error': f'Category with slug "{category_slug}" does not exist'},
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
             logger.error(f"Error retrieving articles by primary category: {e}")
-            return Response({'error': 'An error occurred while fetching articles'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': 'An error occurred while fetching articles'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
     @action(detail=False, methods=['get'])
-    def all_categories(self, request):
+    def categories(self, request):
         """
-        Retrieve all unique categories from the Article model.
-        """
-        try:
-            # Fetch all unique categories associated with articles
-            categories = Category.objects.filter(articles__isnull=False).values_list('name', flat=True).distinct()
-
-            return Response({
-                'success': True,
-                'data': list(categories)  # Convert QuerySet to a list
-            })
-        except Exception as e:
-            logger.error(f"Error retrieving all categories: {str(e)}", exc_info=True)
-            return Response({
-                'success': False,
-                'error': 'An error occurred while fetching categories'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=False, methods=['get'])
-    def all_primary_categories(self, request):
-        """
-        Retrieve all unique primary categories from the Article model.
+        Retrieve categories with optional filtering for primary categories only.
+        
+        Query Parameters:
+        - primary_only: If true, returns only primary categories
         """
         try:
-            # Fetch all unique primary categories, excluding null values
-            primary_categories = Article.objects.exclude(primary_category__isnull=True).values_list('primary_category__name', flat=True).distinct()
+            primary_only = request.query_params.get('primary_only', 'false').lower() == 'true'
+            CACHE_KEY = 'primary_categories' if primary_only else 'all_categories'
+            CACHE_TIMEOUT = 3600  # 1 hour
             
-            return Response({
-                'success': True,
-                'data': list(primary_categories)  # Convert QuerySet to a list
-            })
+            # Try to get from cache
+            categories = cache.get(CACHE_KEY)
+            if categories is None:
+                if primary_only:
+                    # Query for primary categories
+                    categories = Category.objects.filter(
+                        primary_articles__status='ready'
+                    ).annotate(
+                        article_count=Count('primary_articles', filter=Q(primary_articles__status='ready'))
+                    ).values('name', 'slug', 'article_count').order_by('name')
+                else:
+                    # Query for all categories
+                    categories = Category.objects.annotate(
+                        article_count=Count('articles', filter=Q(articles__status='ready'))
+                    ).filter(
+                        article_count__gt=0
+                    ).values('name', 'slug', 'article_count').order_by('name')
+                
+                cache.set(CACHE_KEY, list(categories), CACHE_TIMEOUT)
+            
+            return Response({'success': True, 'data': categories})
         except Exception as e:
-            logger.error(f"Error retrieving all primary categories: {str(e)}", exc_info=True)
-            return Response({
-                'success': False,
-                'error': 'An error occurred while fetching primary categories'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error retrieving categories: {str(e)}", exc_info=True)
+            return Response(
+                {'success': False, 'error': 'An error occurred while fetching categories'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class AuthorViewSet(viewsets.ModelViewSet):
     """API endpoint for authors."""
