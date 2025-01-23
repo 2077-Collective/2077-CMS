@@ -1,7 +1,7 @@
 import logging
 from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
-from django.db.models import F, Count, Q
+from django.db.models import F, Count, Q, Prefetch
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -55,7 +55,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return {'request': self.request}
 
     def get_queryset(self):
-        return Article.objects.filter(status='ready')
+        return Article.objects.filter(status='ready').select_related('primary_category').prefetch_related('categories', 'authors')
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -168,13 +168,14 @@ class ArticleViewSet(viewsets.ModelViewSet):
             articles_page_size = request.query_params.get('articles_page_size', 10)
             try:
                 articles_page_size = min(int(articles_page_size), 100)
+                if articles_page_size <= 0:  # Ensure articles_page_size is positive
+                    articles_page_size = 10
             except ValueError:
                 articles_page_size = 10
-            # Query params
+
             primary_only = request.query_params.get('primary_only', 'false').lower() == 'true'
             sort_by = request.query_params.get('sort_by', 'name')
 
-            # Validate sort field
             valid_sort_fields = ['name', 'is_primary', 'article_count']
             if sort_by not in valid_sort_fields:
                 return Response({
@@ -182,7 +183,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     'error': f"Invalid sort field. Valid options: {', '.join(valid_sort_fields)}"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Get all categories with their article counts
             categories = Category.objects.annotate(
                 article_count=Count(
                     'articles',
@@ -195,50 +195,34 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 categories = categories.filter(is_primary=True)
             
             categories = categories.order_by(sort_by)
-            serializer = CategorySerializer(categories, many=True)
 
-            # Fetch all ready articles with their relationships
-            articles = Article.objects.filter(
-                status='ready'
-            ).select_related(
-                'primary_category'
-            ).prefetch_related(
-                'categories',
-                'authors'
-            ).order_by('-created_at')
-
-            # Group articles by category
-            articles_by_category = {}
-            for article in articles:
-                for category in article.categories.all():
-                    category_id = str(category.id)
-                    if category_id not in articles_by_category:
-                        articles_by_category[category_id] = []
-                    articles_by_category[category_id].append(article)
-
-            logger.debug(f"Total categories with articles: {len(articles_by_category)}")
-            logger.debug(f"Total articles fetched: {articles.count()}")
+            # Prefetch related articles for each category
+            categories_with_articles = categories.prefetch_related(
+                Prefetch(
+                    'articles',
+                    queryset=Article.objects.filter(status='ready').select_related('primary_category').prefetch_related('categories', 'authors').order_by('-created_at'),
+                    to_attr='prefetched_articles'
+                )
+            )
 
             response_data = []
-            for category_data in serializer.data:
-                category_articles = articles_by_category.get(category_data['id'], [])
+            for category in categories_with_articles:
+                category_data = CategorySerializer(category).data
+                category_articles = category.prefetched_articles[:articles_page_size]
                 
-                if category_articles:
-                    category_data['articles'] = ArticleListSerializer(
-                        category_articles[:articles_page_size],
-                        many=True,
+                category_data['articles'] = ArticleListSerializer(
+                    category_articles,
+                    many=True,
+                    context={'request': request}
+                ).data
+                category_data['total_articles'] = len(category.prefetched_articles)
+                
+                if category.is_primary and category_articles:
+                    category_data['latest_article'] = ArticleSerializer(
+                        category_articles[0],
                         context={'request': request}
                     ).data
-                    category_data['total_articles'] = len(category_articles)
-                    
-                    if category_data['is_primary']:
-                        category_data['latest_article'] = ArticleSerializer(
-                            category_articles[0],
-                            context={'request': request}
-                        ).data
                 else:
-                    category_data['articles'] = []
-                    category_data['total_articles'] = 0
                     category_data['latest_article'] = None
 
                 response_data.append(category_data)
