@@ -1,4 +1,3 @@
-# article.py
 from django.db import models
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
@@ -118,11 +117,25 @@ class Article(BaseModel):
 
     def _ensure_primary_category(self):
         """Ensure at least one primary category is set if categories exist."""
-        if self.categories.exists() and not self.categories.filter(is_primary=True).exists():
-            # Set the first category as primary if none are marked
-            first_category = self.categories.first()
-            first_category.is_primary = True
-            first_category.save()
+        with transaction.atomic():
+            # Check if there are any categories
+            if not self.categories.exists():
+                return
+            
+            # Get all categories for this article
+            article_categories = self.categories.all()
+            
+            # Count primary categories
+            primary_count = sum(1 for cat in article_categories if cat.is_primary)
+            
+            if primary_count > 1:
+                raise ValidationError("An article cannot have multiple primary categories")
+            
+            # If no primary category exists, set the first one as primary
+            if primary_count == 0:
+                first_category = article_categories[0]
+                first_category.is_primary = True
+                first_category.save()
 
     def _handle_slug(self):
         """Handle slug generation and history."""

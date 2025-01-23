@@ -206,9 +206,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
             # Query for categories
             categories = Category.objects.annotate(
-                article_count=Count('articles', filter=Q(articles__status='ready'))
+                article_count=Count(
+                    'articles',
+                    filter=Q(articles__status='ready'),
+                    distinct=True
+                )
             ).filter(
                 article_count__gt=0
+            ).select_related(
+                'parent'  # If category has parent relationship
             )
 
             # Apply primary_only filter if requested
@@ -244,7 +250,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
     def articles(self, request, pk=None):
         """Retrieve articles written by a specific author."""
         author = self.get_object()
-        articles = Article.objects.filter(authors=author).select_related('author').prefetch_related('categories')
+        articles = Article.objects.filter(authors=author).prefetch_related('categories', 'authors')
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
 
