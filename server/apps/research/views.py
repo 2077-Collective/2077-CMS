@@ -1,7 +1,7 @@
 import logging
 from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
-from django.db.models import F, Count, Q, Prefetch
+from django.db.models import F, Count, Q
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -213,12 +213,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 )
             ).filter(
                 article_count__gt=0
-            ).prefetch_related(
-                Prefetch(
-                    'articles',
-                    queryset=Article.objects.filter(status='ready').order_by('-created_at'),
-                    to_attr='cached_articles'
-                )
             )
     
             # Apply primary_only filter if requested
@@ -234,8 +228,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
             # For each category, include all articles
             response_data = []
             for category_data in serializer.data:
-                # Get all articles for this category from the prefetched data
-                articles = next((cat.cached_articles for cat in categories if cat.id == category_data['id']), [])
+                # Get all articles for this category
+                articles = Article.objects.filter(
+                    categories__id=category_data['id'],  # Filter by category ID
+                    status='ready'  # Ensure the article is ready to be published
+                ).order_by('-created_at')  # Order by most recent first
     
                 # Serialize the articles
                 article_serializer = ArticleSerializer(articles, many=True)
@@ -243,7 +240,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
                 # For primary categories, include the latest article separately
                 if category_data['is_primary']:
-                    latest_article = articles[0] if articles else None
+                    latest_article = articles.first()
                     if latest_article:
                         latest_article_serializer = ArticleSerializer(latest_article)
                         category_data['latest_article'] = latest_article_serializer.data
