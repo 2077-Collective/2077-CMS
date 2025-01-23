@@ -1,7 +1,7 @@
 import logging
 from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
-from django.db.models import F, Count, Q
+from django.db.models import F, Count, Q, Prefetch
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -183,8 +183,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def categories(self, request):
         """
         Retrieve categories with optional filtering and sorting.
-        For primary categories, include the latest article in the response.
-
+        For each category, include all articles under that category.
+    
         Query Parameters:
         - primary_only: If true, returns only primary categories
         - sort_by: Field to sort by (e.g., 'name', 'is_primary')
@@ -192,10 +192,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         try:
             # Check if the request includes the primary_only filter
             primary_only = request.query_params.get('primary_only', 'false').lower() == 'true'
-
+    
             # Get the sorting field from query parameters (default to 'name')
             sort_by = request.query_params.get('sort_by', 'name')
-
+    
             # Validate the sorting field
             valid_sort_fields = ['name', 'is_primary', 'article_count']
             if sort_by not in valid_sort_fields:
@@ -203,7 +203,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     'success': False,
                     'error': f"Invalid sort field. Valid options are: {', '.join(valid_sort_fields)}"
                 }, status=status.HTTP_400_BAD_REQUEST)
-
+    
             # Query for categories
             categories = Category.objects.annotate(
                 article_count=Count(
@@ -213,45 +213,53 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 )
             ).filter(
                 article_count__gt=0
+            ).prefetch_related(
+                Prefetch(
+                    'articles',
+                    queryset=Article.objects.filter(status='ready').order_by('-created_at'),
+                    to_attr='cached_articles'
+                )
             )
-
+    
             # Apply primary_only filter if requested
             if primary_only:
                 categories = categories.filter(is_primary=True)
-
+    
             # Sort the categories
             categories = categories.order_by(sort_by)
-
+    
             # Serialize the data
             serializer = CategorySerializer(categories, many=True)
-
-            # For primary categories, include the latest article
+    
+            # For each category, include all articles
             response_data = []
             for category_data in serializer.data:
+                # Get all articles for this category from the prefetched data
+                articles = next((cat.cached_articles for cat in categories if cat.id == category_data['id']), [])
+    
+                # Serialize the articles
+                article_serializer = ArticleSerializer(articles, many=True)
+                category_data['articles'] = article_serializer.data
+    
+                # For primary categories, include the latest article separately
                 if category_data['is_primary']:
-                    # Get the latest article for this primary category
-                    latest_article = Article.objects.filter(
-                        categories__id=category_data['id'],  # Filter by category ID
-                        status='ready'  # Ensure the article is ready to be published
-                    ).order_by('-created_at').first()  # Get the most recent article
-
-                    # Serialize the latest article
+                    latest_article = articles[0] if articles else None
                     if latest_article:
-                        article_serializer = ArticleSerializer(latest_article)
-                        category_data['latest_article'] = article_serializer.data
+                        latest_article_serializer = ArticleSerializer(latest_article)
+                        category_data['latest_article'] = latest_article_serializer.data
                     else:
                         category_data['latest_article'] = None
                 else:
                     category_data['latest_article'] = None
-
+    
                 response_data.append(category_data)
-
+    
             # Return the response
             return Response({
                 'success': True,
                 'data': response_data
             }, status=status.HTTP_200_OK)
-
+    
         except Exception as e:
             logger.error(f"Error retrieving categories: {str(e)}", exc_info=True)
             return Response(
