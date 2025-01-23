@@ -1,4 +1,3 @@
-# views.py
 import logging
 from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
@@ -184,6 +183,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def categories(self, request):
         """
         Retrieve categories with optional filtering and sorting.
+        For primary categories, include the latest article in the response.
 
         Query Parameters:
         - primary_only: If true, returns only primary categories
@@ -213,8 +213,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 )
             ).filter(
                 article_count__gt=0
-            ).select_related(
-                'parent'  # If category has parent relationship
             )
 
             # Apply primary_only filter if requested
@@ -227,10 +225,31 @@ class ArticleViewSet(viewsets.ModelViewSet):
             # Serialize the data
             serializer = CategorySerializer(categories, many=True)
 
+            # For primary categories, include the latest article
+            response_data = []
+            for category_data in serializer.data:
+                if category_data['is_primary']:
+                    # Get the latest article for this primary category
+                    latest_article = Article.objects.filter(
+                        categories__id=category_data['id'],  # Filter by category ID
+                        status='ready'  # Ensure the article is ready to be published
+                    ).order_by('-created_at').first()  # Get the most recent article
+
+                    # Serialize the latest article
+                    if latest_article:
+                        article_serializer = ArticleSerializer(latest_article)
+                        category_data['latest_article'] = article_serializer.data
+                    else:
+                        category_data['latest_article'] = None
+                else:
+                    category_data['latest_article'] = None
+
+                response_data.append(category_data)
+
             # Return the response
             return Response({
                 'success': True,
-                'data': serializer.data
+                'data': response_data
             }, status=status.HTTP_200_OK)
 
         except Exception as e:

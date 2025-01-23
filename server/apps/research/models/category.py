@@ -1,4 +1,3 @@
-# category.py
 from django.db import models
 from apps.common.models import BaseModel
 from django.utils.text import slugify
