@@ -173,7 +173,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
             # Query params
             primary_only = request.query_params.get('primary_only', 'false').lower() == 'true'
             sort_by = request.query_params.get('sort_by', 'name')
-            articles_page_size = min(int(request.query_params.get('articles_page_size', 10)), 100)
 
             # Validate sort field
             valid_sort_fields = ['name', 'is_primary', 'article_count']
