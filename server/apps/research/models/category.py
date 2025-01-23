@@ -8,7 +8,8 @@ class Category(BaseModel):
     """Model for categories."""
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, blank=True)
-    is_primary = models.BooleanField(default=False)  # New field to mark primary categories
+    is_primary = models.BooleanField(default=False)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
     class Meta:
         verbose_name_plural = 'Categories'
