@@ -32,8 +32,14 @@ class Article(BaseModel):
     acknowledgement = HTMLField(blank=True, null=True)
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
-    primary_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_articles')
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
+    primary_category = models.ForeignKey(
+        Category,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='primary_for_articles'
+    )
     thumb = CloudinaryField('image', folder='coverImage', default=get_default_thumb, blank=True)
     views = models.PositiveBigIntegerField(default=0)
     status = models.CharField(max_length=10, choices=options, default='draft', db_index=True)    
@@ -117,8 +123,12 @@ class Article(BaseModel):
         ).distinct().order_by('-scheduled_publish_time')[:3]
 
     def _ensure_primary_category(self):
-        """Ensure primary category is set if categories exist."""
-        if not self.primary_category and self.categories.exists():
+        """Ensure that the article has a primary category."""
+        if not self.categories.exists():
+            return
+
+        # If no primary category is set, assign the first category as primary
+        if not self.primary_category:
             self.primary_category = self.categories.first()
 
     def _handle_slug(self):

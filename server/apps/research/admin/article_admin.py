@@ -1,3 +1,4 @@
+# article_admin.py
 from django.contrib import admin
 from django import forms
 from django.db.models import Q
@@ -45,7 +46,6 @@ class ArticleForm(forms.ModelForm):
             'id': "gpt_summary_richtext_field", 
             'placeholder': "GPT-generated summary will appear here"
         })
-        self.fields['primary_category'].queryset = Category.objects.all()
 
 class ArticleAdmin(admin.ModelAdmin):
     """Admin interface for the Article model."""
@@ -92,7 +92,7 @@ class ArticleAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Article Details', {
             'fields': [
-                'title', 'slug', 'authors', 'acknowledgement', 'categories', 'primary_category',
+                'title', 'slug', 'authors', 'acknowledgement', 'categories',
                 'thumb', 'content', 'summary', 'gpt_summary', 'status', 'scheduled_publish_time'
             ]
         }),

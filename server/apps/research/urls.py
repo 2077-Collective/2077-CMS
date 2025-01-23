@@ -1,3 +1,4 @@
+# urls.py
 from django.urls import path, re_path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -25,10 +26,7 @@ urlpatterns = [
     re_path(r'^api/articles/(?P<identifier>[-\w0-9a-fA-F]+)/$', ArticleViewSet.as_view({'get': 'retrieve_by_identifier'}), name='article-detail-by-identifier'), 
    
     # Custom URL for retrieving articles by category
-    re_path(r'^api/articles/category/(?P<category>[-\w]+)/$', ArticleViewSet.as_view({'get': 'retrieve_by_category'}), name='article-list-by-category'),
-    
-    # Custom URL for retrieving articles by primary category
-    re_path(r'^api/articles/primary-category/(?P<category_slug>[-\w]+)/$', ArticleViewSet.as_view({'get': 'retrieve_by_primary_category'}), name='article-list-by-primary-category'),
+    re_path(r'^api/articles/category/(?P<category_slug>[-\w]+)/$', ArticleViewSet.as_view({'get': 'retrieve_by_category'}), name='article-list-by-category'),
     
     # Custom URL for retrieving all categories (with optional filtering for primary categories)
     re_path(r'^api/categories/$', ArticleViewSet.as_view({'get': 'categories'}), name='article-categories'),
