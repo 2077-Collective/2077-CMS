@@ -40,11 +40,6 @@ class LoggingRedirectView(RedirectView):
         )
         return super().get(request, *args, **kwargs)
 
-class CategoryArticlesPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
 class ArticleViewSet(viewsets.ModelViewSet):
     permission_classes = [ArticleUserWritePermission]
     pagination_class = CategoryArticlesPagination
@@ -188,12 +183,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     'error': f"Invalid sort field. Valid options: {', '.join(valid_sort_fields)}"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            if sort_by not in ['name', 'is_primary', 'article_count']:
-                return Response({
-                    'success': False,
-                    'error': "Invalid sort field. Valid options: name, is_primary, article_count"
-                }, status=status.HTTP_400_BAD_REQUEST)
-
             # Get all categories with their article counts
             categories = Category.objects.annotate(
                 article_count=Count(
@@ -228,8 +217,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
                         articles_by_category[category_id] = []
                     articles_by_category[category_id].append(article)
 
-            logger.debug(f"Articles by category: {articles_by_category}")
-            logger.debug(f"Articles query: {articles.query}")
+            logger.debug(f"Total categories with articles: {len(articles_by_category)}")
+            logger.debug(f"Total articles fetched: {articles.count()}")
 
             response_data = []
             for category_data in serializer.data:
