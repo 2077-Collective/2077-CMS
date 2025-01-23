@@ -1,3 +1,4 @@
+# views.py
 import logging
 from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
@@ -11,7 +12,7 @@ from rest_framework import serializers
 from urllib.parse import quote
 from .models import Article, ArticleSlugHistory, Author, Category
 from .permissions import ArticleUserWritePermission
-from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer, AuthorSerializer
+from .serializers import ArticleSerializer, ArticleCreateUpdateSerializer, ArticleListSerializer, AuthorSerializer, CategorySerializer
 import cloudinary.uploader
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -151,10 +152,10 @@ class ArticleViewSet(viewsets.ModelViewSet):
         """Retrieve articles by their primary category."""
         try:
             # Verify category exists first
-            category = get_object_or_404(Category, slug=category_slug)
+            category = get_object_or_404(Category, slug=category_slug, is_primary=True)
             
-            # Filter articles by primary_category's slug and status='ready'
-            instances = Article.objects.filter(primary_category__slug=category_slug, status='ready')
+            # Filter articles by categories marked as primary
+            instances = Article.objects.filter(categories=category, status='ready')
             
             # Paginate the queryset
             page = self.paginate_queryset(instances)
@@ -167,8 +168,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'success': True, 'data': serializer.data})
         
         except Category.DoesNotExist:
+            logger.error(f"Primary category with slug '{category_slug}' does not exist")
             return Response(
-                {'error': f'Category with slug "{category_slug}" does not exist'},
+                {'error': f'Primary category with slug "{category_slug}" does not exist'},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
@@ -181,37 +183,50 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def categories(self, request):
         """
-        Retrieve categories with optional filtering for primary categories only.
-        
+        Retrieve categories with optional filtering and sorting.
+
         Query Parameters:
         - primary_only: If true, returns only primary categories
+        - sort_by: Field to sort by (e.g., 'name', 'is_primary')
         """
         try:
+            # Check if the request includes the primary_only filter
             primary_only = request.query_params.get('primary_only', 'false').lower() == 'true'
-            CACHE_KEY = 'primary_categories' if primary_only else 'all_categories'
-            CACHE_TIMEOUT = 3600  # 1 hour
-            
-            # Try to get from cache
-            categories = cache.get(CACHE_KEY)
-            if categories is None:
-                if primary_only:
-                    # Query for primary categories
-                    categories = Category.objects.filter(
-                        primary_articles__status='ready'
-                    ).annotate(
-                        article_count=Count('primary_articles', filter=Q(primary_articles__status='ready'))
-                    ).values('name', 'slug', 'article_count').order_by('name')
-                else:
-                    # Query for all categories
-                    categories = Category.objects.annotate(
-                        article_count=Count('articles', filter=Q(articles__status='ready'))
-                    ).filter(
-                        article_count__gt=0
-                    ).values('name', 'slug', 'article_count').order_by('name')
-                
-                cache.set(CACHE_KEY, list(categories), CACHE_TIMEOUT)
-            
-            return Response({'success': True, 'data': categories})
+
+            # Get the sorting field from query parameters (default to 'name')
+            sort_by = request.query_params.get('sort_by', 'name')
+
+            # Validate the sorting field
+            valid_sort_fields = ['name', 'is_primary', 'article_count']
+            if sort_by not in valid_sort_fields:
+                return Response({
+                    'success': False,
+                    'error': f"Invalid sort field. Valid options are: {', '.join(valid_sort_fields)}"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Query for categories
+            categories = Category.objects.annotate(
+                article_count=Count('articles', filter=Q(articles__status='ready'))
+            ).filter(
+                article_count__gt=0
+            )
+
+            # Apply primary_only filter if requested
+            if primary_only:
+                categories = categories.filter(is_primary=True)
+
+            # Sort the categories
+            categories = categories.order_by(sort_by)
+
+            # Serialize the data
+            serializer = CategorySerializer(categories, many=True)
+
+            # Return the response
+            return Response({
+                'success': True,
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+
         except Exception as e:
             logger.error(f"Error retrieving categories: {str(e)}", exc_info=True)
             return Response(
@@ -229,7 +244,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
     def articles(self, request, pk=None):
         """Retrieve articles written by a specific author."""
         author = self.get_object()
-        articles = Article.objects.filter(author=author).select_related('author').prefetch_related('categories')
+        articles = Article.objects.filter(authors=author).select_related('author').prefetch_related('categories')
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
 

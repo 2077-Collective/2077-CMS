@@ -1,3 +1,4 @@
+# article.py
 from django.db import models
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
@@ -32,7 +33,6 @@ class Article(BaseModel):
     acknowledgement = HTMLField(blank=True, null=True)
     authors = models.ManyToManyField(Author, blank=True, related_name='articles')
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
-    primary_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_articles')
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     thumb = CloudinaryField('image', folder='coverImage', default=get_default_thumb, blank=True)
     views = models.PositiveBigIntegerField(default=0)
@@ -117,9 +117,12 @@ class Article(BaseModel):
         ).distinct().order_by('-scheduled_publish_time')[:3]
 
     def _ensure_primary_category(self):
-        """Ensure primary category is set if categories exist."""
-        if not self.primary_category and self.categories.exists():
-            self.primary_category = self.categories.first()
+        """Ensure at least one primary category is set if categories exist."""
+        if self.categories.exists() and not self.categories.filter(is_primary=True).exists():
+            # Set the first category as primary if none are marked
+            first_category = self.categories.first()
+            first_category.is_primary = True
+            first_category.save()
 
     def _handle_slug(self):
         """Handle slug generation and history."""

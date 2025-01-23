@@ -1,3 +1,4 @@
+# category.py
 from django.db import models
 from apps.common.models import BaseModel
 from django.utils.text import slugify
@@ -7,6 +8,7 @@ class Category(BaseModel):
     """Model for categories."""
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, blank=True)
+    is_primary = models.BooleanField(default=False)  # New field to mark primary categories
 
     class Meta:
         verbose_name_plural = 'Categories'
@@ -26,7 +28,6 @@ class Category(BaseModel):
         return self.name
 
     def generate_slug(self):
-
         if not self.name:
             raise ValueError("Name is required to generate slug")
 
