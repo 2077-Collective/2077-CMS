@@ -1,7 +1,7 @@
 import logging
 from django.views.generic.base import RedirectView
 from rest_framework.decorators import action
-from django.db.models import F, Count, Q
+from django.db.models import F, Count, Q, Prefetch
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -26,10 +26,12 @@ from rest_framework.pagination import PageNumberPagination
 # Set up logging
 logger = logging.getLogger(__name__)
 
+class CategoryArticlesPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class LoggingRedirectView(RedirectView):
-    """
-    Custom RedirectView that logs incoming requests before performing the redirect.
-    """
     def get(self, request, *args, **kwargs):
         logger.info(
             f"Redirect request: path={request.path} "
@@ -39,12 +41,10 @@ class LoggingRedirectView(RedirectView):
         return super().get(request, *args, **kwargs)
 
 class ArticleViewSet(viewsets.ModelViewSet):
-    """API endpoint for articles."""
     permission_classes = [ArticleUserWritePermission]
-    pagination_class = PageNumberPagination  # Add pagination class
+    pagination_class = CategoryArticlesPagination
     
     def get_serializer_class(self):
-        """Return appropriate serializer class based on request method."""
         if self.action == 'list':
             return ArticleListSerializer
         if self.request.method in ['POST', 'PUT', 'PATCH']:
@@ -52,15 +52,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
         return ArticleSerializer
     
     def get_serializer_context(self):
-        """Add request to the serializer context."""
         return {'request': self.request}
 
     def get_queryset(self):
-        """Retrieve articles that are ready to be published."""
-        return Article.objects.filter(status='ready')
+        return Article.objects.filter(status='ready').select_related('primary_category').prefetch_related('categories', 'authors')
     
     def create(self, request, *args, **kwargs):
-        """Handle article creation."""
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)            
@@ -73,7 +70,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Failed to create a new Article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def update(self, request, *args, **kwargs):
-        """Handle article update."""
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         try:
@@ -86,10 +82,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'Invalid data provided'}, status=status.HTTP_400_BAD_REQUEST)       
             return Response({'error': 'Error updating article'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    # Custom action to retrieve articles by slug or UUID
     @action(detail=False, methods=['get'], url_path=r'(?P<identifier>[-\w0-9a-fA-F]+)')
     def retrieve_by_identifier(self, request, identifier=None):
-        """Retrieve an article by slug or UUID, handling old slugs."""
         try:
             with transaction.atomic():
                 if self.is_valid_uuid(identifier):
@@ -98,10 +92,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
                     try:
                         instance = Article.objects.get(slug=identifier)
                     except Article.DoesNotExist:
-                        # Check if this is an old slug
                         slug_history = get_object_or_404(ArticleSlugHistory, old_slug=identifier)
                         instance = slug_history.article
-                        # Return a redirect response with the new URL
                         new_url = request.build_absolute_uri().replace(
                             f'/api/articles/{quote(identifier)}/',
                             f'/api/articles/{quote(instance.slug)}/'
@@ -123,10 +115,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Article does not exist'}, 
                           status=status.HTTP_404_NOT_FOUND)
     
-    # Custom action to retrieve articles by category
     @action(detail=False, methods=['get'], url_path=r'category/(?P<category_slug>[-\w]+)')
     def retrieve_by_category(self, request, category_slug=None):
-        """Retrieve article list by category."""
         try:
             instances = Article.objects.filter(categories__slug=category_slug)
             if not instances.exists():
@@ -138,31 +128,23 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Category does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
     def is_valid_uuid(self, value):
-        """Check if the value is a valid UUID."""
         try:
             uuid.UUID(value)
             return True
         except ValueError:
             return False
         
-    # Custom action to retrieve articles by primary category
     @action(detail=False, methods=['get'], url_path=r'primary-category/(?P<category_slug>[-\w]+)')
     def retrieve_by_primary_category(self, request, category_slug=None):
-        """Retrieve articles by their primary category."""
         try:
-            # Verify category exists first
             category = get_object_or_404(Category, slug=category_slug, is_primary=True)
-            
-            # Filter articles by categories marked as primary
             instances = Article.objects.filter(categories=category, status='ready')
             
-            # Paginate the queryset
             page = self.paginate_queryset(instances)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
             
-            # Fallback if pagination is not applied
             serializer = self.get_serializer(instances, many=True)
             return Response({'success': True, 'data': serializer.data})
         
@@ -181,72 +163,70 @@ class ArticleViewSet(viewsets.ModelViewSet):
         
     @action(detail=False, methods=['get'])
     def categories(self, request):
-        """
-        Retrieve categories with optional filtering and sorting.
-        For primary categories, include the latest article in the response.
-
-        Query Parameters:
-        - primary_only: If true, returns only primary categories
-        - sort_by: Field to sort by (e.g., 'name', 'is_primary')
-        """
+        """Get categories with paginated articles"""
         try:
-            # Check if the request includes the primary_only filter
-            primary_only = request.query_params.get('primary_only', 'false').lower() == 'true'
+            articles_page_size = request.query_params.get('articles_page_size', 10)
+            try:
+                articles_page_size = min(int(articles_page_size), 100)
+                if articles_page_size <= 0:  # Ensure articles_page_size is positive
+                    articles_page_size = 10
+            except ValueError:
+                articles_page_size = 10
 
-            # Get the sorting field from query parameters (default to 'name')
+            primary_only = request.query_params.get('primary_only', 'false').lower() == 'true'
             sort_by = request.query_params.get('sort_by', 'name')
 
-            # Validate the sorting field
             valid_sort_fields = ['name', 'is_primary', 'article_count']
             if sort_by not in valid_sort_fields:
                 return Response({
                     'success': False,
-                    'error': f"Invalid sort field. Valid options are: {', '.join(valid_sort_fields)}"
+                    'error': f"Invalid sort field. Valid options: {', '.join(valid_sort_fields)}"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Query for categories
             categories = Category.objects.annotate(
                 article_count=Count(
                     'articles',
                     filter=Q(articles__status='ready'),
                     distinct=True
                 )
-            ).filter(
-                article_count__gt=0
             )
 
-            # Apply primary_only filter if requested
             if primary_only:
                 categories = categories.filter(is_primary=True)
-
-            # Sort the categories
+            
             categories = categories.order_by(sort_by)
 
-            # Serialize the data
-            serializer = CategorySerializer(categories, many=True)
+            # Prefetch related articles for each category
+            categories_with_articles = categories.prefetch_related(
+                Prefetch(
+                    'articles',
+                    queryset=Article.objects.filter(status='ready').select_related('primary_category').prefetch_related('categories', 'authors').order_by('-created_at'),
+                    to_attr='prefetched_articles'
+                )
+            )
 
-            # For primary categories, include the latest article
             response_data = []
-            for category_data in serializer.data:
-                if category_data['is_primary']:
-                    # Get the latest article for this primary category
-                    latest_article = Article.objects.filter(
-                        categories__id=category_data['id'],  # Filter by category ID
-                        status='ready'  # Ensure the article is ready to be published
-                    ).order_by('-created_at').first()  # Get the most recent article
-
-                    # Serialize the latest article
-                    if latest_article:
-                        article_serializer = ArticleSerializer(latest_article)
-                        category_data['latest_article'] = article_serializer.data
-                    else:
-                        category_data['latest_article'] = None
+            for category in categories_with_articles:
+                category_data = CategorySerializer(category).data
+                category_articles = category.prefetched_articles[:articles_page_size]
+                
+                category_data['articles'] = ArticleListSerializer(
+                    category_articles,
+                    many=True,
+                    context={'request': request}
+                ).data
+                category_data['total_articles'] = len(category.prefetched_articles)
+                
+                if category.is_primary and category_articles:
+                    category_data['latest_article'] = ArticleSerializer(
+                        category_articles[0],
+                        context={'request': request}
+                    ).data
                 else:
                     category_data['latest_article'] = None
 
                 response_data.append(category_data)
 
-            # Return the response
             return Response({
                 'success': True,
                 'data': response_data
@@ -260,14 +240,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
             )
 
 class AuthorViewSet(viewsets.ModelViewSet):
-    """API endpoint for authors."""
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
     permission_classes = [ArticleUserWritePermission]
 
     @action(detail=True, methods=['get'])
     def articles(self, request, pk=None):
-        """Retrieve articles written by a specific author."""
         author = self.get_object()
         articles = Article.objects.filter(authors=author).prefetch_related('categories', 'authors')
         serializer = ArticleSerializer(articles, many=True)
@@ -284,7 +262,6 @@ def tinymce_upload_image(request):
     if request.method == "POST" and request.FILES:
         try:
             file = request.FILES['file']
-            # Enhanced file validation
             allowed_types = {'image/jpeg', 'image/png', 'image/gif'}
             if not file.content_type.startswith('image/'):
                 raise ValidationError("Only image files are allowed")
@@ -293,7 +270,6 @@ def tinymce_upload_image(request):
             if file.size > 5 * 1024 * 1024:
                 raise ValidationError("File size too large")
             
-            # Sanitize filename
             import re
             safe_filename = re.sub(r'[^a-zA-Z0-9._-]', '', file.name)
             
