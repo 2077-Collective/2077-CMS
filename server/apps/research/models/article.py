@@ -1,10 +1,10 @@
+# article.py
 from django.db import models
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from apps.common.models import BaseModel
 from apps.research.managers import ArticleObjects
 from .category import Category
-from .author import Author
 from django.utils import timezone
 from django.conf import settings
 from tinymce.models import HTMLField
@@ -30,7 +30,7 @@ class Article(BaseModel):
     summary = models.TextField(blank=True)
     gpt_summary = HTMLField(blank=True, null=True)
     acknowledgement = HTMLField(blank=True, null=True)
-    authors = models.ManyToManyField(Author, blank=True, related_name='articles')
+    authors = models.ManyToManyField('Author', blank=True, related_name='articles')  # Use string reference
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     primary_category = models.ForeignKey(
