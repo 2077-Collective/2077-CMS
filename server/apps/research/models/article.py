@@ -32,6 +32,7 @@ class Article(BaseModel):
     acknowledgement = HTMLField(blank=True, null=True)
     authors = models.ManyToManyField('Author', blank=True, related_name='articles')  # Use string reference
     slug = models.SlugField(max_length=255, blank=True, db_index=True)
+    primary_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_articles')
     categories = models.ManyToManyField(Category, blank=True, related_name='articles')
     primary_category = models.ForeignKey(
         Category,
@@ -122,22 +123,20 @@ class Article(BaseModel):
             id=self.id
         ).distinct().order_by('-scheduled_publish_time')[:3]
 
-    def _ensure_primary_category(self):
-        """Ensure that the article has a primary category."""
-        if not self.categories.exists():
-            return
-
-        # If no primary category is set, assign the first category as primary
-        if not self.primary_category:
-            self.primary_category = self.categories.first()
-
-    def _handle_slug(self):
-        """Handle slug generation and history."""
+    def save(self, *args, **kwargs):
+        """Override the save method to generate a unique slug and build table of contents."""
         if not self.slug or self.title_update():
             self.slug = self.generate_unique_slug()
+
+        """Override the save method to track slug changes."""
         if self.pk:
             try:
                 old_instance = Article.objects.get(pk=self.pk)
+                # Generate new slug first
+                if not self.slug or self.title_update():
+                    self.slug = self.generate_unique_slug()
+                
+                # Then check if we need to create slug history
                 if old_instance.slug and old_instance.slug != self.slug:
                     with transaction.atomic():
                         ArticleSlugHistory.objects.create(
@@ -145,20 +144,14 @@ class Article(BaseModel):
                             old_slug=old_instance.slug
                         )
             except Article.DoesNotExist:
-                pass
-
-    def _build_table_of_contents(self):
-        """Build the table of contents if content exists."""
+                pass  
+       
         if self.content:
             self.build_table_of_contents()
-
-    def _handle_scheduled_publish(self):
-        """Handle scheduled publish logic."""
+        
         if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
             self.status = 'ready'
-
-    def _validate_thumbnail(self):
-        """Validate the thumbnail."""
+        
         if self.thumb and hasattr(self.thumb, 'public_id'):
             try:
                 if not self.thumb.public_id:

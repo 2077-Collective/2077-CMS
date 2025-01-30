@@ -31,6 +31,15 @@ urlpatterns = [
     # Custom URL for retrieving all categories (with optional filtering for primary categories)
     re_path(r'^api/categories/$', ArticleViewSet.as_view({'get': 'categories'}), name='article-categories'),
     
+    # Custom URL for retrieving articles by primary category
+    re_path(r'^api/articles/primary-category/(?P<category_slug>[-\w]+)/$', ArticleViewSet.as_view({'get': 'retrieve_by_primary_category'}), name='article-list-by-primary-category'),
+    
+    # Custom URL for retrieving all categories
+    re_path(r'^api/categories/$', ArticleViewSet.as_view({'get': 'all_categories'}), name='article-all-categories'),
+    
+    # Custom URL for retrieving all primary categories
+    re_path(r'^api/primary-categories/$', ArticleViewSet.as_view({'get': 'all_primary_categories'}), name='article-all-primary-categories'),
+    
     # Upload tinyMCE images to Cloudinary
     path('tinymce/upload/', tinymce_upload_image, name='tinymce_upload'),
     
