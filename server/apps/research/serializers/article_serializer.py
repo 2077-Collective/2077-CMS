@@ -56,6 +56,7 @@ class RelatedArticleSerializer(serializers.ModelSerializer):
 class ArticleListSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True)
     authors = AuthorSerializer(many=True)
+    primary_category = serializers.SlugRelatedField(slug_field='slug', read_only=True)
     thumb = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
@@ -74,12 +75,14 @@ class ArticleListSerializer(serializers.ModelSerializer):
             "table_of_contents",
             "gpt_summary",
             "related_articles",
+            "summary",
         ]
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True, read_only=True)
     categories = CategorySerializer(many=True)
+    primary_category = serializers.SlugRelatedField(slug_field='slug', read_only=True)
     views = serializers.ReadOnlyField()
     min_read = serializers.ReadOnlyField()
     related_articles = serializers.SerializerMethodField()
@@ -101,6 +104,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "authors",
             "thumb",
             "categories",
+            "primary_category",
             "summary",
             "acknowledgement",
             "content",

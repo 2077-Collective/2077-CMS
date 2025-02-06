@@ -238,6 +238,46 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {'success': False, 'error': 'An error occurred while fetching categories'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+    @action(detail=False, methods=['get'])
+    def all_categories(self, request):
+        """
+        Retrieve all unique categories from the Article model.
+        """
+        try:
+            # Fetch all unique categories associated with articles
+            categories = Category.objects.filter(articles__isnull=False).values_list('name', flat=True).distinct()
+
+            return Response({
+                'success': True,
+                'data': list(categories)  # Convert QuerySet to a list
+            })
+        except Exception as e:
+            logger.error(f"Error retrieving all categories: {str(e)}", exc_info=True)
+            return Response({
+                'success': False,
+                'error': 'An error occurred while fetching categories'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def all_primary_categories(self, request):
+        """
+        Retrieve all unique primary categories from the Article model.
+        """
+        try:
+            # Fetch all unique primary categories, excluding null values
+            primary_categories = Article.objects.exclude(primary_category__isnull=True).values_list('primary_category__name', flat=True).distinct()
+            
+            return Response({
+                'success': True,
+                'data': list(primary_categories)  # Convert QuerySet to a list
+            })
+        except Exception as e:
+            logger.error(f"Error retrieving all primary categories: {str(e)}", exc_info=True)
+            return Response({
+                'success': False,
+                'error': 'An error occurred while fetching primary categories'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AuthorViewSet(viewsets.ModelViewSet):
     queryset = Author.objects.all()
