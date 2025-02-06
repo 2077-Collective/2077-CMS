@@ -26,7 +26,6 @@ load_dotenv()
 from decouple import config
 from .cloudinary import CLOUDINARY_DOMAIN, CLOUDINARY_STORAGE
 from .beehiiv import BEEHIIV_CONFIG
-from .algolia import ALGOLIA
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -68,8 +67,7 @@ THIRD_PARTY_APPS = [
     'django_celery_beat',
     'tinymce',
     'cloudinary_storage',
-    'cloudinary',
-    'algoliasearch_django',   
+    'cloudinary',   
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -214,6 +212,3 @@ OPENAI_API_KEY = config('OPENAI_API_KEY', default=None)
 # Beehiiv Settings
 BEEHIIV_API_KEY = BEEHIIV_CONFIG['API_KEY']
 BEEHIIV_PUBLICATION_ID = BEEHIIV_CONFIG['PUBLICATION_ID']
-
-# Algolia
-ALGOLIA = ALGOLIA
