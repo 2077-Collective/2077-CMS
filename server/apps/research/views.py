@@ -22,7 +22,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle
 from django.core.cache import cache
 from rest_framework.pagination import PageNumberPagination
-from apps.research.models import Category
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -239,22 +238,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 {'success': False, 'error': 'An error occurred while fetching categories'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    # Custom action to retrieve articles by primary category
-    @action(detail=False, methods=['get'], url_path=r'primary-category/(?P<category_slug>[-\w]+)')
-    def retrieve_by_primary_category(self, request, category_slug=None):
-        """Retrieve articles by their primary category."""
-        try:
-            # Filter articles by primary_category's slug and status='ready'
-            instances = Article.objects.filter(primary_category__slug=category_slug, status='ready')
-            if not instances.exists():
-                return Response({'error': 'No articles found for this primary category'}, status=status.HTTP_404_NOT_FOUND)
-            
-            # Serialize the articles
-            serializer = self.get_serializer(instances, many=True)
-            return Response({'success': True, 'data': serializer.data})
-        except Exception as e:
-            logger.error(f"Error retrieving articles by primary category: {e}")
-            return Response({'error': 'An error occurred while fetching articles'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=False, methods=['get'])
     def all_categories(self, request):
