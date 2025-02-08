@@ -167,19 +167,28 @@ class Article(BaseModel):
             needs_new_slug = not self.slug or self.title_update()
             
             if needs_new_slug:
-                self.slug = self.generate_unique_slug()
-            
-            if self.pk:
-                try:
-                    with transaction.atomic():
-                        old_instance = Article.objects.get(pk=self.pk)
-                        if old_instance.slug and old_instance.slug != self.slug:
-                            ArticleSlugHistory.objects.create(
-                                article=self,
-                                old_slug=old_instance.slug
-                            )
-                except Article.DoesNotExist:
-                    pass
+                new_slug = self.generate_unique_slug()
+                
+                if self.pk:
+                    try:
+                        with transaction.atomic():
+                            old_instance = Article.objects.get(pk=self.pk)
+                            old_slug = old_instance.slug
+                            
+                            if (old_slug and old_slug != new_slug and 
+                                not ArticleSlugHistory.objects.filter(
+                                    article=self,
+                                    old_slug=old_slug
+                                ).exists()):
+                                ArticleSlugHistory.objects.create(
+                                    article=self,
+                                    old_slug=old_slug
+                                )
+                    except Article.DoesNotExist:
+                        pass
+                
+                self.slug = new_slug
+                
         except Exception as e:
             logger.error(f"Error handling slug: {str(e)}", exc_info=True)
             raise
