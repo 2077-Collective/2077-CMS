@@ -13,6 +13,9 @@ from bs4 import BeautifulSoup
 import uuid
 from django.db import transaction
 from cloudinary.models import CloudinaryField
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_default_thumb():
     return "v1734517759/v4_article_cover_slashing_hhf6tz"
@@ -65,13 +68,14 @@ class Article(BaseModel):
     
     def clean(self):
         super().clean()
-        # Ensure no more than 3 related articles are selected
         if self.related_articles.count() > 3:
             raise ValidationError({'related_articles': 'You can select up to 3 related articles only.'})
 
     def calculate_min_read(self):
+        if not self.content:
+            return 1
         word_count = len(self.content.split())
-        words_per_minute = 300  # Average reading speed (words per minute)
+        words_per_minute = 300
         minutes = max(1, round(word_count / words_per_minute))
         return minutes
 
@@ -82,70 +86,103 @@ class Article(BaseModel):
 
     def build_table_of_contents(self):
         """Build the table of contents from the article content."""
-        soup = BeautifulSoup(self.content, 'html.parser')
-        headers = soup.find_all(['h1', 'h2', 'h3'])
-        
-        toc = []
-        stack = [{'level': 0, 'children': toc}]
+        try:
+            if not self.content:
+                self.table_of_contents = []
+                return
 
-        for header in headers:
-            level = int(header.name[1])
-            title = header.get_text()
-            header['id'] = slugify(title)
-
-            while level <= stack[-1]['level']:
-                stack.pop()
-
-            new_item = {'title': title, 'id': header['id'], 'children': []}
+            soup = BeautifulSoup(self.content, 'html.parser')
+            headers = soup.find_all(['h1', 'h2', 'h3'])
             
-            stack[-1]['children'].append(new_item)
-            stack.append({'level': level, 'children': new_item['children']})
+            toc = []
+            stack = [{'level': 0, 'children': toc}]
 
-        self.table_of_contents = toc
-        self.content = str(soup)
+            for header in headers:
+                level = int(header.name[1])
+                title = header.get_text()
+                header['id'] = slugify(title)
+
+                while level <= stack[-1]['level']:
+                    stack.pop()
+
+                new_item = {'title': title, 'id': header['id'], 'children': []}
+                
+                stack[-1]['children'].append(new_item)
+                stack.append({'level': level, 'children': new_item['children']})
+
+            self.table_of_contents = toc
+            self.content = str(soup)
+        except Exception as e:
+            logger.error(f"Error building table of contents: {str(e)}", exc_info=True)
+            self.table_of_contents = []
 
     def get_related_articles(self):
         """
         Returns manually selected related articles if they exist,
         otherwise falls back to automatic recommendations
         """
-        manual_related = self.related_articles.filter(status='ready').order_by('-scheduled_publish_time')[:3]
-        
-        if manual_related.exists():
-            return manual_related
+        try:
+            manual_related = self.related_articles.filter(status='ready').order_by('-scheduled_publish_time')[:3]
             
-        # Fallback logic - articles with matching categories
-        return Article.objects.filter(
-            status='ready',
-            categories__in=self.categories.all()
-        ).exclude(
-            id=self.id
-        ).distinct().order_by('-scheduled_publish_time')[:3]
+            if manual_related.exists():
+                return manual_related
+                
+            return Article.objects.filter(
+                status='ready',
+                categories__in=self.categories.all()
+            ).exclude(
+                id=self.id
+            ).distinct().order_by('-scheduled_publish_time')[:3]
+        except Exception as e:
+            logger.error(f"Error getting related articles: {str(e)}", exc_info=True)
+            return Article.objects.none()
 
     def _ensure_primary_category(self):
         """Ensure that the article has a primary category."""
-        if not self.categories.exists():
-            return
+        try:
+            if not self.categories.exists():
+                return
 
-        # If no primary category is set, assign the first category as primary
-        if not self.primary_category:
-            self.primary_category = self.categories.first()
+            if not self.primary_category:
+                self.primary_category = self.categories.first()
+        except Exception as e:
+            logger.error(f"Error ensuring primary category: {str(e)}", exc_info=True)
+
+    def title_update(self):
+        """Check if the title has changed."""
+        if not self.pk:
+            return True
+        try:
+            original = Article.objects.get(pk=self.pk)
+            return original.title != self.title
+        except Article.DoesNotExist:
+            return True
+        except Exception as e:
+            logger.error(f"Error checking title update: {str(e)}", exc_info=True)
+            return False
 
     def _handle_slug(self):
         """Handle slug generation and history."""
-        if not self.slug or self.title_update():
-            self.slug = self.generate_unique_slug()
-        if self.pk:
-            try:
-                old_instance = Article.objects.get(pk=self.pk)
-                if old_instance.slug and old_instance.slug != self.slug:
+        try:
+            needs_new_slug = not self.slug or self.title_update()
+            
+            if needs_new_slug:
+                self.slug = self.generate_unique_slug()
+            
+            if self.pk:
+                try:
                     with transaction.atomic():
-                        ArticleSlugHistory.objects.create(
-                            article=self,
-                            old_slug=old_instance.slug
-                        )
-            except Article.DoesNotExist:
-                pass
+                        old_instance = Article.objects.get(pk=self.pk)
+                        if old_instance.slug and old_instance.slug != self.slug:
+                            ArticleSlugHistory.objects.create(
+                                article=self,
+                                old_slug=old_instance.slug
+                            )
+                except Article.DoesNotExist:
+                    pass
+        except Exception as e:
+            logger.error(f"Error handling slug: {str(e)}", exc_info=True)
+            raise
 
     def _build_table_of_contents(self):
         """Build the table of contents if content exists."""
@@ -154,45 +191,65 @@ class Article(BaseModel):
 
     def _handle_scheduled_publish(self):
         """Handle scheduled publish logic."""
-        if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
-            self.status = 'ready'
+        try:
+            if self.scheduled_publish_time and self.status == 'draft' and timezone.now() >= self.scheduled_publish_time:
+                self.status = 'ready'
+        except Exception as e:
+            logger.error(f"Error handling scheduled publish: {str(e)}", exc_info=True)
 
     def _validate_thumbnail(self):
         """Validate the thumbnail."""
-        if self.thumb and hasattr(self.thumb, 'public_id'):
-            try:
+        try:
+            if self.thumb and hasattr(self.thumb, 'public_id'):
                 if not self.thumb.public_id:
                     raise ValidationError("Failed to upload image to Cloudinary")
-            except Exception as e:
-                raise ValidationError(f"Image upload failed: {str(e)}") from e
+        except Exception as e:
+            logger.error(f"Error validating thumbnail: {str(e)}", exc_info=True)
+            raise ValidationError(f"Image upload failed: {str(e)}") from e
 
     def save(self, *args, **kwargs):
         """Override the save method to generate a unique slug, build table of contents, and set primary category."""
-        self._ensure_primary_category()
-        self._handle_slug()
-        self._build_table_of_contents()
-        self._handle_scheduled_publish()
-        self._validate_thumbnail()
+        try:
+            logger.info(f"Starting save for article {self.pk} with title {self.title}")
+            
+            self._ensure_primary_category()
+            logger.info("Primary category ensured")
+            
+            self._handle_slug()
+            logger.info(f"Slug handled: {self.slug}")
+            
+            self._build_table_of_contents()
+            logger.info("Table of contents built")
+            
+            self._handle_scheduled_publish()
+            logger.info(f"Scheduled publish handled: {self.status}")
+            
+            self._validate_thumbnail()
+            logger.info("Thumbnail validated")
 
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
+            logger.info("Save completed successfully")
+            
+        except Exception as e:
+            logger.error(f"Error saving article: {str(e)}", exc_info=True)
+            raise
 
     def generate_unique_slug(self):
         """Generate a unique slug for the article."""
-        base_slug = slugify(self.title)
-        slug = base_slug
-        num = 1
-        while Article.objects.filter(slug=slug).exists():
-            slug = f"{base_slug}-{num}"
-            num += 1
-        return slug
-    
-    def title_update(self):
-        """Check if the title has changed."""
-        if self.pk:
-            original = Article.objects.filter(pk=self.pk).only('title').first()
-            if original:
-                return original.title != self.title
-        return False
+        try:
+            base_slug = slugify(self.title)
+            if not base_slug:
+                base_slug = str(uuid.uuid4())[:8]
+            
+            slug = base_slug
+            num = 1
+            while Article.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{num}"
+                num += 1
+            return slug
+        except Exception as e:
+            logger.error(f"Error generating unique slug: {str(e)}", exc_info=True)
+            raise
 
 class ArticleSlugHistory(models.Model):
     """Model to track historical slugs for articles."""
