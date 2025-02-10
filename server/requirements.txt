@@ -26,7 +26,7 @@ cloudinary==1.41.0
 cron-descriptor==1.4.3
 cryptography==43.0.0
 distro==1.9.0
-Django==5.0.8
+Django==5.0.11
 django-admin-interface==0.28.8
 django-celery-beat==2.6.0
 django-ckeditor==6.7.1
