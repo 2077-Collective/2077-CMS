@@ -108,14 +108,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
                             'new_url': new_url,
                             'data': self.get_serializer(instance).data
                         }, status=status.HTTP_301_MOVED_PERMANENTLY)
-                    
-                # Update views count without triggering Algolia
+
                 Article.objects.filter(pk=instance.pk).update(views=F('views') + 1)
                 instance.refresh_from_db()
-                
+
                 serializer = self.get_serializer(instance)
-                return Response({'success': True, 'data': serializer.data})
-                
+                return Response(serializer.data)
+
         except Exception as e:
             logger.error(f"Error retrieving article by identifier: {e}")
             return Response({'error': 'Article does not exist'}, 
