@@ -57,6 +57,11 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Article.objects.filter(status='ready').select_related('primary_category').prefetch_related('categories', 'authors')
     
+    def retrieve(self, request, *args, **kwargs):
+        identifier = kwargs.get('pk')
+        logger.info(f"Retrieve called with identifier: {identifier}")
+        return self.retrieve_by_identifier(request, identifier)
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         try:
@@ -104,12 +109,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
                             'data': self.get_serializer(instance).data
                         }, status=status.HTTP_301_MOVED_PERMANENTLY)
                     
-                instance.views = F('views') + 1
-                instance.save(update_fields=['views'])
-                instance.refresh_from_db(fields=['views'])
+                # Update views count without triggering Algolia
+                Article.objects.filter(pk=instance.pk).update(views=F('views') + 1)
+                instance.refresh_from_db()
+                
                 serializer = self.get_serializer(instance)
                 return Response({'success': True, 'data': serializer.data})
-            
+                
         except Exception as e:
             logger.error(f"Error retrieving article by identifier: {e}")
             return Response({'error': 'Article does not exist'}, 
