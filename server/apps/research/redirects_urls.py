@@ -11,6 +11,8 @@ urlpatterns = [
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/EIP-7685-General-Purpose-Execution-Requests/', permanent=True)),
     path('api/articles/charting-ethereums-account-abstraction-roadmap-1/', 
          LoggingRedirectView.as_view(url='https://www.research.2077.xyz/charting-ethereums-account-abstraction-roadmap-i-eip-3074-eip-7702/', permanent=True)),
+    path('api/articles/spectra-finance-moving-toward-a-more-robust-defi-ird-ecosystem/', 
+         LoggingRedirectView.as_view(url='https://www.research.2077.xyz/spectra-finance-moving-toward-a-more-robust-defi-and-ird-ecosystem/', permanent=True)),
 
     # New redirects for Substack articles
     path('p/eip-7503-zero-knowledge-wormholes/',
