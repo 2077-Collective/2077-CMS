@@ -90,36 +90,42 @@ class ArticleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path=r'(?P<identifier>[-\w0-9a-fA-F]+)')
     def retrieve_by_identifier(self, request, identifier=None):
         try:
+            logger.info(f"Retrieve by identifier called with identifier: {identifier}")
             with transaction.atomic():
                 if self.is_valid_uuid(identifier):
                     instance = Article.objects.get(pk=identifier)
+                    logger.info(f"Found article by UUID: {instance.title}")
                 else:
                     try:
                         instance = Article.objects.get(slug=identifier)
+                        logger.info(f"Found article by slug: {instance.title}")
                     except Article.DoesNotExist:
+                        logger.info(f"Article with slug '{identifier}' not found. Checking slug history...")
                         slug_history = get_object_or_404(ArticleSlugHistory, old_slug=identifier)
                         instance = slug_history.article
+                        logger.info(f"Found article in slug history: {instance.title}")
                         new_url = request.build_absolute_uri().replace(
                             f'/api/articles/{quote(identifier)}/',
                             f'/api/articles/{quote(instance.slug)}/'
                         )
+                        logger.info(f"Redirecting to new URL: {new_url}")
                         return Response({
                             'type': 'redirect',
                             'new_url': new_url,
                             'data': self.get_serializer(instance).data
                         }, status=status.HTTP_301_MOVED_PERMANENTLY)
-
+    
                 Article.objects.filter(pk=instance.pk).update(views=F('views') + 1)
                 instance.refresh_from_db()
-
+    
                 serializer = self.get_serializer(instance)
                 return Response(serializer.data)
-
+    
         except Exception as e:
             logger.error(f"Error retrieving article by identifier: {e}")
             return Response({'error': 'Article does not exist'}, 
                           status=status.HTTP_404_NOT_FOUND)
-    
+        
     @action(detail=False, methods=['get'], url_path=r'category/(?P<category_slug>[-\w]+)')
     def retrieve_by_category(self, request, category_slug=None):
         try:
